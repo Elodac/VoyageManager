@@ -163,8 +163,6 @@ Toutes les informations sont automatiquement enregistrées dans le navigateur.
 
 Aucune base de données n'est nécessaire.
 
-```
-
 ---
 
 # 🚀 Installation
