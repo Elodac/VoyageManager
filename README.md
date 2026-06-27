@@ -163,54 +163,6 @@ Toutes les informations sont automatiquement enregistrées dans le navigateur.
 
 Aucune base de données n'est nécessaire.
 
----
-
-# 📸 Captures d'écran
-
-## Dashboard
-
-```
-screenshots/dashboard.png
-```
-
----
-
-## Destinations
-
-```
-screenshots/destinations.png
-```
-
----
-
-## Carte
-
-```
-screenshots/map.png
-```
-
----
-
-## Agenda
-
-```
-screenshots/agenda.png
-```
-
----
-
-## Budget
-
-```
-screenshots/budget.png
-```
-
----
-
-## Valises
-
-```
-screenshots/valises.png
 ```
 
 ---
