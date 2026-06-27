@@ -79,7 +79,6 @@ Le projet est actuellement développé en **HTML / CSS / JavaScript** et fonctio
 - Météo
 - Gastronomie
 - Lieux incontournables
-- tests
 
 ---
 
