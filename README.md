@@ -1,126 +1,134 @@
+<div align="center">
+
 # ✈️ VoyageManager
 
-> Une application web moderne permettant de centraliser l'organisation complète de ses voyages : préparation, budget, itinéraire, transport, activités, checklists et suivi.
+### Planifiez, organisez et centralisez tous vos voyages depuis une seule application.
 
-![Version](https://img.shields.io/badge/version-1.0-blue)
-![HTML](https://img.shields.io/badge/HTML-5-orange)
-![CSS](https://img.shields.io/badge/CSS-3-blue)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow)
-![License](https://img.shields.io/badge/license-MIT-green)
+Une application web moderne permettant de gérer ses destinations, son budget, ses transports, ses hébergements, ses activités, ses checklists et son planning de voyage.
 
 ---
 
-# Présentation
+![Version](https://img.shields.io/badge/Version-1.0-3b82f6?style=for-the-badge)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Leaflet](https://img.shields.io/badge/Leaflet-199900?style=for-the-badge&logo=leaflet&logoColor=white)
+![License](https://img.shields.io/github/license/TON_PSEUDO/VoyageManager?style=for-the-badge)
 
-VoyageManager est une application web développée en HTML, CSS et JavaScript permettant de préparer un voyage de A à Z.
-
-Contrairement à un simple planificateur, l'application centralise toutes les informations utiles dans une interface unique :
-
-* destinations
-* itinéraires
-* budgets
-* hébergements
-* transports
-* activités
-* restaurants
-* checklists
-* agenda
-* cartes interactives
-
-L'objectif est d'éviter d'avoir des dizaines d'onglets ouverts ou plusieurs applications différentes pour préparer un voyage.
+</div>
 
 ---
 
-# Aperçu des fonctionnalités
+# 📖 Sommaire
+
+- Présentation
+- Fonctionnalités
+- Captures d'écran
+- Installation
+- Structure du projet
+- Technologies
+- Personnalisation
+- Roadmap
+- Contribution
+- Licence
+
+---
+
+# 🌍 Présentation
+
+VoyageManager est une application web développée afin de regrouper **l'ensemble de la préparation d'un voyage** dans une seule interface.
+
+L'objectif est de remplacer les dizaines d'onglets ouverts habituellement :
+
+- Booking
+- Google Maps
+- Google Flights
+- Skyscanner
+- Tripadvisor
+- Guide du Routard
+- Checklists
+- Tableurs Excel
+- Notes
+
+par un seul outil moderne.
+
+Le projet est actuellement développé en **HTML / CSS / JavaScript** et fonctionne entièrement côté client.
+
+---
+
+# ✨ Fonctionnalités
 
 ## 🏠 Dashboard
 
-* vue d'ensemble des voyages
-* compte à rebours avant le départ
-* progression des préparatifs
-* tâches prioritaires
-* statistiques
-* planning du voyage confirmé
+- Vue d'ensemble des voyages
+- Statistiques
+- Compte à rebours
+- Voyage en cours
+- Suivi des tâches
+- Planning rapide
 
 ---
 
-## 🗺️ Gestion des destinations
+## 🗺️ Destinations
 
-* catalogue de destinations
-* filtres avancés
-* recherche instantanée
-* budgets
-* types de voyage
-* statut des projets
-
-Chaque destination possède une fiche complète contenant :
-
-* informations générales
-* météo
-* budget
-* transport
-* hébergement
-* lieux d'intérêt
-* gastronomie
-* liens utiles
-* programme
-* recherches rapides
+- Recherche
+- Filtres
+- Budgets
+- Programmes
+- Informations pratiques
+- Météo
+- Gastronomie
+- Lieux incontournables
 
 ---
 
 ## 📍 Carte interactive
 
-* affichage de toutes les destinations
-* regroupement automatique des marqueurs
-* points d'intérêt
-* filtrage par catégorie
-* recentrage automatique
+- Leaflet
+- Marqueurs
+- Clustering
+- Points d'intérêt
+- Navigation
 
 ---
 
 ## 📆 Agenda
 
-Création d'un planning visuel comprenant :
-
-* journées
-* horaires
-* activités
-* glisser-déposer
-* redimensionnement des blocs
-* impression
+- Planning journalier
+- Drag & Drop
+- Impression
+- Export
 
 ---
 
-## 🚗 Comparateur de transport
+## 🚗 Comparateur transport
 
-Comparaison des différents moyens de transport :
+Comparaison :
 
-* voiture
-* avion
+✅ Voiture
 
-Calculs disponibles :
+✅ Avion
 
-* distance
-* durée
-* coût carburant
-* péages
-* coût total
-* temps porte-à-porte
+avec :
+
+- coût carburant
+- péages
+- durée
+- distance
+- coût total
 
 ---
 
-## 🔍 Recherche rapide
+## 🔎 Recherche rapide
 
 Accès direct vers :
 
-* Google Flights
-* Skyscanner
-* Kayak
-* Booking
-* Tripadvisor
-* Google Maps
-* agences de voyages
-* compagnies aériennes
+- Google Flights
+- Booking
+- Skyscanner
+- Kayak
+- Tripadvisor
+- Google Maps
 
 ---
 
@@ -128,110 +136,111 @@ Accès direct vers :
 
 Checklist complète :
 
-* vêtements
-* accessoires
-* documents
-* pharmacie
-* électronique
+- vêtements
+- pharmacie
+- électronique
+- papiers
+- accessoires
 
-Fonctionnalités :
-
-* progression
-* impression
-* export
-* personnalisation
+avec progression automatique.
 
 ---
 
-## 💶 Gestion des budgets
+## 💶 Budget
 
-Comparaison automatique :
+Comparaison des destinations :
 
-* budget minimum
-* budget maximum
-* prix des vols
-* rapport qualité/prix
+- prix moyen
+- budget mini
+- budget maxi
+- coût des vols
 
 ---
 
-## 📄 Sauvegarde locale
+## 💾 Sauvegarde locale
 
-L'application mémorise automatiquement :
-
-* les checklists
-* l'avancement
-* les tâches
-* les préférences utilisateur
+Toutes les informations sont automatiquement enregistrées dans le navigateur.
 
 Aucune base de données n'est nécessaire.
 
 ---
 
-# Technologies utilisées
+# 📸 Captures d'écran
 
-* HTML5
-* CSS3
-* JavaScript ES6
-* Leaflet
-* Leaflet MarkerCluster
-* LocalStorage
+## Dashboard
 
----
-
-# Structure du projet
-
-```text
-VoyageManager/
-│
-├── index.html
-├── data.js
-├── transport.js
-│
-├── styles/
-│   ├── main.css
-│   └── tokens.css
-│
-├── assets/
-│
-└── README.md
+```
+screenshots/dashboard.png
 ```
 
 ---
 
-# Installation
+## Destinations
 
-Aucune compilation n'est nécessaire.
+```
+screenshots/destinations.png
+```
 
-## 1. Cloner le dépôt
+---
+
+## Carte
+
+```
+screenshots/map.png
+```
+
+---
+
+## Agenda
+
+```
+screenshots/agenda.png
+```
+
+---
+
+## Budget
+
+```
+screenshots/budget.png
+```
+
+---
+
+## Valises
+
+```
+screenshots/valises.png
+```
+
+---
+
+# 🚀 Installation
+
+## Cloner le dépôt
 
 ```bash
-git clone https://github.com/VOTRE_COMPTE/VoyageManager.git
+git clone https://github.com/VOTRE_PSEUDO/VoyageManager.git
 ```
 
-## 2. Entrer dans le projet
+## Aller dans le dossier
 
 ```bash
 cd VoyageManager
 ```
 
-## 3. Ouvrir le projet
+## Lancer un serveur
 
-Deux possibilités :
-
-### Option 1 (recommandée)
-
-Lancer un serveur web local.
-
-Exemple avec VSCode :
-
-```
-Live Server
-```
-
-ou
+Avec Python
 
 ```bash
 python -m http.server 8000
+```
+
+ou avec VSCode
+
+```
+Live Server
 ```
 
 Puis ouvrir :
@@ -242,107 +251,118 @@ http://localhost:8000
 
 ---
 
-### Option 2
-
-Ouvrir directement :
+# 📂 Structure
 
 ```
-index.html
+VoyageManager
+│
+├── index.html
+├── data.js
+├── transport.js
+│
+├── styles
+│   ├── main.css
+│   └── tokens.css
+│
+├── screenshots
+│
+└── README.md
 ```
-
-Certaines fonctionnalités liées aux ressources externes fonctionneront néanmoins mieux via un serveur local.
 
 ---
 
-# Personnalisation
+# ⚙️ Technologies
 
-Les destinations sont définies dans :
+| Technologie | Utilisation |
+|-------------|-------------|
+| HTML5 | Structure |
+| CSS3 | Interface |
+| JavaScript ES6 | Logique |
+| Leaflet | Cartographie |
+| MarkerCluster | Groupement des marqueurs |
+| LocalStorage | Sauvegarde |
 
-```text
+---
+
+# 🎨 Personnalisation
+
+Les données des destinations sont stockées dans :
+
+```
 data.js
 ```
 
-Tu peux facilement modifier :
-
-* les pays
-* les budgets
-* les programmes
-* les lieux
-* les hôtels
-* les restaurants
-* les excursions
-* les transports
-
-L'apparence est personnalisable dans :
+Le thème est défini dans :
 
 ```
 styles/tokens.css
 ```
 
-Tu peux modifier :
+Les composants graphiques sont dans :
 
-* couleurs
-* thème
-* rayons
-* palette
-* identité graphique
+```
+styles/main.css
+```
 
 ---
 
-# Roadmap
+# 🛣️ Roadmap
 
-Les prochaines évolutions prévues sont notamment :
+## Version 1
 
-* authentification utilisateur
-* comptes multiples
-* base de données
-* hébergement en ligne
-* création collaborative de destinations
-* ajout collaboratif d'activités
-* génération PDF complète du voyage
-* import/export des voyages
-* synchronisation cloud
-* API Google Maps
-* API OpenStreetMap
-* API météo
-* API comparateurs de vols
-* API hôtels
-* suivi des réservations
-* suivi des paiements
-* tableau de bord d'avancement
-* application PWA
-* mode hors ligne
+- [x] Dashboard
+- [x] Destinations
+- [x] Carte
+- [x] Agenda
+- [x] Budget
+- [x] Valises
+- [x] Recherche
 
 ---
 
-# Captures d'écran
+## Version 2
 
-Ajouter ici des captures de :
-
-* Dashboard
-* Carte
-* Destinations
-* Agenda
-* Budget
-* Valises
-* Recherche
-
----
-
-# Licence
-
-Projet distribué sous licence MIT.
-
----
-
-# Auteur
-
-**Clément**
-
-Ingénieur Systèmes & Réseaux
-
-Projet personnel développé afin de disposer d'une plateforme complète de préparation et de suivi des voyages, avec une architecture évolutive permettant, à terme, une ouverture à un usage collaboratif et public.
+- [ ] Comptes utilisateurs
+- [ ] Authentification
+- [ ] Base de données
+- [ ] Synchronisation Cloud
+- [ ] Création collaborative
+- [ ] API Google Maps
+- [ ] API OpenStreetMap
+- [ ] API Météo
+- [ ] API Google Flights
+- [ ] API Booking
+- [ ] Export PDF
+- [ ] Impression complète
+- [ ] Gestion des réservations
+- [ ] Suivi des paiements
+- [ ] Génération automatique de programmes
+- [ ] PWA
+- [ ] Mode hors connexion
 
 ---
 
-Je te conseillerais également d'ajouter un **README "premium"**, avec une bannière graphique, une table des matières cliquable, des GIF de démonstration et des badges plus complets. Ce type de README donne immédiatement une impression de projet professionnel sur GitHub.
+# 🤝 Contribution
+
+Les contributions sont les bienvenues.
+
+1. Fork
+2. Nouvelle branche
+3. Commit
+4. Pull Request
+
+---
+
+# 📄 Licence
+
+Distribué sous licence MIT.
+
+---
+
+<div align="center">
+
+Développé avec ❤️ pour simplifier l'organisation des voyages.
+
+⭐ Si ce projet vous plaît, pensez à lui attribuer une étoile sur GitHub !
+
+</div>
