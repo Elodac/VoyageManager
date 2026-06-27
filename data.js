@@ -972,3 +972,8 @@ const AGENDA_PRESETS = {
     ],
   },
 };
+
+// ── Exposition pour les modules ES (store/model/vues) ──
+// data.js reste un script classique ; on publie les données sur window
+// pour que les modules (chargés en defer) puissent les lire.
+Object.assign(window, { DESTINATIONS, VALISE_TEMPLATES, AGENDA_PRESETS, IATA_CODES, STATUT_CONFIG, TYPE_ICONS });

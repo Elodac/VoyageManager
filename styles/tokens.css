@@ -1,0 +1,18 @@
+/* ============================================================
+   tokens.css — variables de design (couleurs, rayons)
+   ============================================================ */
+:root {
+  --bg: #0f1117;
+  --bg2: #161b27;
+  --bg3: #1e2535;
+  --border: #2a3347;
+  --text: #e2e8f0;
+  --muted: #8892a4;
+  --accent: #3b82f6;
+  --accent2: #6366f1;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+  --card-radius: 14px;
+}
