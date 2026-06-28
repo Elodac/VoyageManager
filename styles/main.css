@@ -350,3 +350,60 @@ body:has(#page-transport.active) main{max-width:1600px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
+/* ── RESPONSIVE MOBILE ─────────────────────────────── */
+@media(max-width:640px){
+  /* Navigation défilante */
+  nav{padding:0 12px;gap:4px;overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  .nav-brand{font-size:.9rem;margin-right:8px}
+  .nav-btn{padding:5px 10px;font-size:.8rem}
+
+  /* Contenu principal */
+  .main-content{padding:14px 12px}
+  .page-title{font-size:1.2rem}
+
+  /* Modales plein écran sur mobile */
+  .modal-overlay{padding:0;align-items:flex-end}
+  .modal{border-radius:18px 18px 0 0;max-height:92vh}
+  .modal-header{padding:16px 16px 12px;gap:10px}
+  .modal-header h2{font-size:1.1rem}
+  .modal-header .modal-emoji{font-size:1.8rem}
+  .modal-body{padding:14px}
+  .modal-tabs{padding:10px 14px 0;gap:2px;overflow-x:auto;scrollbar-width:none}
+  .modal-tab{padding:6px 12px;font-size:.78rem;white-space:nowrap}
+
+  /* Cartes destinations */
+  .dest-card{flex-direction:column}
+  .dest-card-meta{flex-direction:column;gap:6px}
+
+  /* Cartes voyages */
+  .trip-grid{grid-template-columns:1fr}
+
+  /* Agenda */
+  .agenda-layout{grid-template-columns:1fr}
+  .palette{position:static}
+  .ag-day-header{font-size:.72rem}
+  .ag-day-name{font-size:.65rem}
+  .time-labels{display:none}
+
+  /* Stats */
+  .stats-row{grid-template-columns:1fr 1fr}
+
+  /* Grille POIs */
+  .poi-grid{grid-template-columns:1fr}
+
+  /* Formulaire Ajouter */
+  .adv-grid{grid-template-columns:1fr}
+  .adv-field{min-width:unset}
+
+  /* Boutons outils dans la modale voyage */
+  .el-chips{flex-wrap:wrap;gap:6px}
+  .el-row{flex-direction:column;align-items:flex-start;gap:8px}
+
+  /* Emoji picker — repositionné */
+  .emoji-panel{right:0;left:auto;width:min(300px,90vw)}
+
+  /* Transport / programmes selects */
+  .adv-grid .adv-field select,.adv-grid .adv-field input{font-size:.82rem}
+}
+

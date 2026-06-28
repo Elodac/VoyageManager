@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VoyageManager</title>
+<title>📆 VoyageManager</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
@@ -78,7 +78,16 @@
 
   <!-- Mes voyages — suivi d'avancement -->
   <div class="card" style="margin-bottom:20px">
-    <h2>🧳 Mes voyages — suivi d'avancement</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <h2 style="margin:0">🧳 Mes voyages — suivi d'avancement</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" id="btn-export-json" title="Exporter toutes les données (JSON)">📤 Exporter</button>
+        <label class="btn btn-outline btn-sm" title="Importer des données (JSON)" style="cursor:pointer">
+          📥 Importer
+          <input type="file" id="input-import-json" accept=".json" style="display:none">
+        </label>
+      </div>
+    </div>
     <div id="trips-mount"></div>
   </div>
 
@@ -399,6 +408,7 @@ let valiseState = {}; // { dest_id: { cat: { item: checked } } }
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
   agLoadState();
+  restoreFilters();
   buildDashboard();
   buildDestGrid();
   buildBudget();
@@ -610,13 +620,22 @@ function renderDestGrid() {
 
 function setFiltre(f) {
   currentFiltre = f;
+  sessionStorage.setItem('vm_filtre', f);
   document.querySelectorAll('.filtre-btn').forEach(b => b.classList.toggle('active', b.dataset.filtre === f));
   renderDestGrid();
 }
 
 function filterDests() {
   currentSearchQuery = document.querySelector('.search-input').value;
+  sessionStorage.setItem('vm_search', currentSearchQuery);
   renderDestGrid();
+}
+
+function restoreFilters() {
+  const f = sessionStorage.getItem('vm_filtre');
+  if (f) { currentFiltre = f; document.querySelectorAll('.filtre-btn').forEach(b => b.classList.toggle('active', b.dataset.filtre === f)); }
+  const q = sessionStorage.getItem('vm_search');
+  if (q) { currentSearchQuery = q; const inp = document.querySelector('.search-input'); if (inp) inp.value = q; }
 }
 
 // ── MODAL DESTINATION ──────────────────────────────────
@@ -1177,7 +1196,7 @@ function printValise() {
     </header>
     ${meteo?`<div class="meteo">🌡️ <strong>Météo :</strong> ${meteo}</div>`:''}
     <div class="cols">${catHTML}</div>
-    <footer><span>VoyageManager — Clément &amp; Madame</span><span>Cochez au fur et à mesure ✓</span></footer>
+    <footer><span>Cochez au fur et à mesure ✓</span></footer>
     <script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script>
   </body></html>`;
 
@@ -1737,6 +1756,58 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// Fermeture modal destination avec Échap
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const mo = document.getElementById('modal-overlay');
+    if (mo && !mo.classList.contains('hidden')) { mo.classList.add('hidden'); return; }
+    const tm = document.getElementById('trip-modal-overlay');
+    if (tm && !tm.classList.contains('hidden')) { tm.classList.add('hidden'); }
+  }
+});
+
+// Export / Import JSON
+document.addEventListener('DOMContentLoaded', () => {
+  const btnExport = document.getElementById('btn-export-json');
+  const inputImport = document.getElementById('input-import-json');
+  if (btnExport) {
+    btnExport.addEventListener('click', () => {
+      const KEYS = ['vm_store_v1', 'voyagemanager_valises', 'voyagemanager_agenda'];
+      const snapshot = {};
+      KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) snapshot[k] = JSON.parse(v); });
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const date = new Date().toISOString().slice(0, 10);
+      a.download = `voyagemanager-backup-${date}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('📤 Données exportées !');
+    });
+  }
+  if (inputImport) {
+    inputImport.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Format invalide');
+          if (!confirm('Importer ces données ? Les données actuelles seront écrasées.')) return;
+          Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+          showToast('📥 Données importées ! Rechargement…');
+          setTimeout(() => location.reload(), 1200);
+        } catch (err) {
+          showToast('⚠️ Fichier invalide : ' + err.message);
+        }
+        inputImport.value = '';
+      };
+      reader.readAsText(file);
+    });
+  }
+});
 </script>
 <!-- Scripts classic — ordre de dépendances, compatible file:// (pas d'ES modules) -->
 <script src="js/model.js"></script>

@@ -19,7 +19,6 @@ const AIRPORTS = [
   { iata: 'SXB', nom: 'Strasbourg',              ville: 'Strasbourg',  pays: 'France', coords: [48.5383, 7.6282] },
   { iata: 'MPL', nom: 'Montpellier Méditerranée',ville: 'Montpellier', pays: 'France', coords: [43.5762, 3.9630] },
   { iata: 'BIQ', nom: 'Biarritz Pays Basque',    ville: 'Biarritz',    pays: 'France', coords: [43.4684, -1.5311] },
-  { iata: 'NTE', nom: 'Nantes Atlantique',       ville: 'Nantes',      pays: 'France', coords: [47.1532, -1.6107] },
   { iata: 'GVA', nom: 'Genève',                  ville: 'Genève',      pays: 'Suisse', coords: [46.2381, 6.1089] },
   { iata: 'BRU', nom: 'Bruxelles',               ville: 'Bruxelles',   pays: 'Belgique', coords: [50.9014, 4.4844] },
 ];

@@ -116,6 +116,19 @@ function openTripModal(id) {
         💡 Clique sur un statut pour le changer (transport/hébergement) ou faire défiler (activités/statut global). La progression se met à jour automatiquement.
       </div>
 
+      <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">📅 Dates du voyage</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="adv-field" style="min-width:140px">
+          <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Départ</label>
+          <input type="date" class="add-item-input" id="trip-date-dep" value="${t.date_depart||''}" style="font-size:.82rem">
+        </div>
+        <div class="adv-field" style="min-width:140px">
+          <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Retour</label>
+          <input type="date" class="add-item-input" id="trip-date-ret" value="${t.date_retour||''}" style="font-size:.82rem">
+        </div>
+        <button class="btn btn-outline btn-sm" id="trip-dates-save">💾 Enregistrer les dates</button>
+      </div>
+
       <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">🧰 Outils du voyage</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-outline btn-sm" data-go="agenda">📆 Agenda</button>
@@ -129,6 +142,7 @@ function openTripModal(id) {
       <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" data-dossier>📄 Imprimer / Générer le dossier de voyage</button>
         <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${routardUrl((window.DESTINATIONS||[]).find(d=>d.id===t.destinationId)||{nom:t.nom})}">🧭 Guide du Routard</a>
+        <button class="btn btn-sm" style="background:#3b1111;color:#f87171;border:1px solid #7f1d1d;margin-left:auto" data-delete-trip>🗑️ Supprimer ce voyage</button>
       </div>
     </div>`;
 
@@ -162,6 +176,23 @@ function openTripModal(id) {
     });
     openTripModal(id);
   }));
+
+  // Sauvegarde des dates
+  m.querySelector('#trip-dates-save').addEventListener('click', () => {
+    const dep = document.getElementById('trip-date-dep').value;
+    const ret = document.getElementById('trip-date-ret').value;
+    updateTrip(id, { date_depart: dep || null, date_retour: ret || null });
+    window.showToast && window.showToast('📅 Dates enregistrées !');
+    openTripModal(id);
+  });
+
+  // Suppression du voyage
+  m.querySelector('[data-delete-trip]').addEventListener('click', () => {
+    if (!confirm(`Supprimer le voyage "${t.nom}" ? Cette action est irréversible.`)) return;
+    removeTrip(id);
+    ov.classList.add('hidden');
+    window.showToast && window.showToast('🗑️ Voyage supprimé.');
+  });
 
   ov.classList.remove('hidden');
 }
