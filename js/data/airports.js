@@ -4,7 +4,7 @@
 // ============================================================
 
 /** Principaux aéroports français + quelques hubs européens utiles. */
-export const AIRPORTS = [
+const AIRPORTS = [
   { iata: 'NTE', nom: 'Nantes Atlantique',       ville: 'Nantes',      pays: 'France', coords: [47.1532, -1.6107] },
   { iata: 'CDG', nom: 'Paris Charles-de-Gaulle', ville: 'Paris',       pays: 'France', coords: [49.0097, 2.5479] },
   { iata: 'ORY', nom: 'Paris Orly',              ville: 'Paris',       pays: 'France', coords: [48.7233, 2.3794] },
@@ -25,7 +25,7 @@ export const AIRPORTS = [
 ];
 
 /** Villes de départ courantes (pour la saisie / sélection rapide). */
-export const FR_CITIES = [
+const FR_CITIES = [
   { nom: 'Nantes',      coords: [47.2184, -1.5536] },
   { nom: 'Paris',       coords: [48.8566, 2.3522] },
   { nom: 'Lyon',        coords: [45.7640, 4.8357] },

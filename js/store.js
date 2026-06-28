@@ -1,83 +1,97 @@
 // ============================================================
-// store.js — source de vérité (voyages) + persistance + pub/sub
-// (Phase 1B — refonte modulaire)
+// store.js — voyages + catalogue utilisateur + persistance + pub/sub
+// Script CLASSIQUE (globals) → fonctionne en file:// comme en http.
+// Dépend de model.js (chargé avant) : tripFromDestination, computeTripProgress
 // ============================================================
-import { tripFromDestination, computeTripProgress } from './model.js';
-
 const STORAGE_KEY = 'vm_store_v1';
-const SCHEMA_VERSION = 1;
+const STORE_SCHEMA_VERSION = 2;
 
-const state = {
-  version: SCHEMA_VERSION,
-  trips: [],
-};
+const storeState = { version: STORE_SCHEMA_VERSION, trips: [], userDestinations: [], userActivities: [] };
+let _storeLoaded = false;
+const _storeListeners = new Set();
 
-const listeners = new Set();
-/** S'abonner aux changements du store. Renvoie une fonction de désabonnement. */
-export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
-function emit() { listeners.forEach(fn => { try { fn(state); } catch (e) { console.error(e); } }); }
+function subscribe(fn) { _storeListeners.add(fn); return () => _storeListeners.delete(fn); }
+function _storeEmit() { _storeListeners.forEach(fn => { try { fn(storeState); } catch (e) { console.error(e); } }); }
 
-function persist() {
-  state.version = SCHEMA_VERSION;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: state.version, trips: state.trips }));
+function _storePersist() {
+  storeState.version = STORE_SCHEMA_VERSION;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: storeState.version, trips: storeState.trips,
+    userDestinations: storeState.userDestinations, userActivities: storeState.userActivities,
+  }));
 }
 
-// ── API publique ────────────────────────────────────────
-export function getTrips() { return state.trips; }
-export function getTrip(id) { return state.trips.find(t => t.id === id) || null; }
-export function getTripByDestination(destId) { return state.trips.find(t => t.destinationId === destId) || null; }
+function getTrips() { return storeState.trips; }
+function getTrip(id) { return storeState.trips.find(t => t.id === id) || null; }
+function getTripByDestination(destId) { return storeState.trips.find(t => t.destinationId === destId) || null; }
+function progress(trip) { return computeTripProgress(trip); }
 
-export function progress(trip) { return computeTripProgress(trip); }
-
-/** Met à jour un voyage via un patch (objet ou fonction), persiste et notifie. */
-export function updateTrip(id, patch) {
+function updateTrip(id, patch) {
   const t = getTrip(id);
   if (!t) return null;
   const changes = typeof patch === 'function' ? patch(t) : patch;
   Object.assign(t, changes, { updatedAt: Date.now() });
-  persist(); emit();
+  _storePersist(); _storeEmit();
   return t;
 }
+function addTrip(trip) { storeState.trips.push(trip); _storePersist(); _storeEmit(); return trip; }
+function removeTrip(id) { storeState.trips = storeState.trips.filter(t => t.id !== id); _storePersist(); _storeEmit(); }
 
-export function addTrip(trip) { state.trips.push(trip); persist(); emit(); return trip; }
-export function removeTrip(id) { state.trips = state.trips.filter(t => t.id !== id); persist(); emit(); }
+function getUserDestinations() { return storeState.userDestinations; }
+function getUserActivities() { return storeState.userActivities; }
 
-// ── Chargement / migration / seed ───────────────────────
-export function load() {
+function addUserDestination(dest) {
+  storeState.userDestinations.push(dest);
+  if (window.DESTINATIONS && !window.DESTINATIONS.some(d => d.id === dest.id)) window.DESTINATIONS.push(dest);
+  _storePersist(); _storeEmit();
+  _storeRefreshLegacy();
+  return dest;
+}
+function addUserActivity(act) { storeState.userActivities.push(act); _storePersist(); _storeEmit(); return act; }
+
+function _storeRefreshLegacy() {
+  ['buildDestGrid', 'buildBudget', 'buildValiseSelect', 'buildSearchSelect', 'buildAgendaSelect']
+    .forEach(fn => { try { window[fn] && window[fn](); } catch (e) { /* ignore */ } });
+}
+
+function _storeMergeUserDest() {
+  if (!window.DESTINATIONS) return;
+  storeState.userDestinations.forEach(d => {
+    if (!window.DESTINATIONS.some(x => x.id === d.id)) window.DESTINATIONS.push(d);
+  });
+}
+
+function loadStore() {
+  if (_storeLoaded) return storeState;
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw) {
     try {
-      const parsed = JSON.parse(raw);
-      state.trips = parsed.trips || [];
-      state.version = parsed.version || SCHEMA_VERSION;
-      return state;
+      const p = JSON.parse(raw);
+      storeState.trips = p.trips || [];
+      storeState.userDestinations = p.userDestinations || [];
+      storeState.userActivities = p.userActivities || [];
+      storeState.version = p.version || STORE_SCHEMA_VERSION;
+      _storeMergeUserDest();
+      _storeLoaded = true;
+      return storeState;
     } catch (e) { console.warn('Store illisible, reseed', e); }
   }
-  seedFromCatalog();
-  persist();
-  return state;
+  _storeSeed();
+  _storePersist();
+  _storeLoaded = true;
+  return storeState;
 }
 
-/**
- * Première initialisation : crée des voyages à partir du catalogue
- * (confirmés + en planification), en reprenant les anciennes clés
- * localStorage (agenda/valise) là où elles existent.
- */
-function seedFromCatalog() {
+function _storeSeed() {
   const cat = window.DESTINATIONS || [];
   const seedStatuts = ['confirme', 'planification'];
-  state.trips = cat
-    .filter(d => seedStatuts.includes(d.statut))
-    .map(d => tripFromDestination(d));
-  // Lien avec les données héritées (pour information / continuité)
+  storeState.trips = cat.filter(d => seedStatuts.includes(d.statut)).map(d => tripFromDestination(d));
   try {
     const oldValises = JSON.parse(localStorage.getItem('voyagemanager_valises') || '{}');
     const oldAgenda = JSON.parse(localStorage.getItem('voyagemanager_agenda') || '{}');
-    state.trips.forEach(t => {
+    storeState.trips.forEach(t => {
       t.hasValise = !!oldValises[t.destinationId];
       t.hasAgenda = !!(oldAgenda[t.destinationId] && (oldAgenda[t.destinationId].blocks || []).length);
     });
   } catch (e) { /* ignore */ }
 }
-
-export { state };

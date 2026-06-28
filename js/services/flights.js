@@ -4,13 +4,13 @@
 // Skyscanner, Kiwi…) en réimplémentant searchFlights().
 // ============================================================
 
-export const FLIGHTS_PROVIDER = 'stub';
+const FLIGHTS_PROVIDER = 'stub';
 
 /**
  * Recherche de vols. Interface stable destinée à une future API.
  * @returns {Promise<{available:boolean, reason?:string, results:Array}>}
  */
-export async function searchFlights({ from, to, date } = {}) {
+async function searchFlights({ from, to, date } = {}) {
   return {
     available: false,
     reason: 'Comparateur de prix non connecté (API à brancher).',
@@ -19,7 +19,7 @@ export async function searchFlights({ from, to, date } = {}) {
 }
 
 /** Liens de comparateurs externes en attendant l'intégration API. */
-export function comparatorLinks(fromIata, toIata, date) {
+function comparatorLinks(fromIata, toIata, date) {
   const d = (date || '').replace(/-/g, '');
   return [
     { label: 'Google Flights', url: 'https://www.google.com/travel/flights' },
