@@ -12,7 +12,7 @@ async function geocode(query) {
   if (!query || query.trim().length < 3) return { results: [], error: 'Saisis au moins 3 caractères.' };
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&addressdetails=1&q=${encodeURIComponent(query)}`;
   try {
-    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const r = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'VoyageManager/1.0 (contact: clement@voyagemanager.local)' } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
     return {
