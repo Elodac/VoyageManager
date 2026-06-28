@@ -2,10 +2,7 @@
 // views/transport.js — page "Transport" : comparateur voiture/avion
 // (Phase 2 — chantier 1)
 // ============================================================
-import { FR_CITIES } from '../data/airports.js';
-import { nearestAirports, compareCar, comparePlane, recommend, DEFAULTS } from '../services/transport.js';
-import { fmtDuration } from '../services/geo.js';
-import { searchFlights, comparatorLinks } from '../services/flights.js';
+(function () {
 
 const state = { destId: '', cityName: 'Nantes', conso: DEFAULTS.conso, prix: DEFAULTS.prix, depIata: 'NTE' };
 
@@ -125,6 +122,9 @@ function init() {
   const mount = document.getElementById('transport-mount');
   if (!mount) return;
   mount.innerHTML = renderToolbar();
+  // Pré-sélection d'une destination par défaut → la page n'est jamais vide
+  const first = (dests()[0] || {}).id;
+  if (first) { state.destId = first; document.getElementById('tr-dest').value = first; }
   populateAirports();
   renderResults();
 
@@ -135,5 +135,12 @@ function init() {
   document.getElementById('tr-prix').addEventListener('input', e => { state.prix = e.target.value; renderResults(); });
 }
 
+// Sélection externe (depuis un voyage / autre page)
+window.transportSelect = (destId) => {
+  const s = document.getElementById('tr-dest');
+  if (s && destId) { s.value = destId; state.destId = destId; renderResults(); }
+};
+
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
+})();

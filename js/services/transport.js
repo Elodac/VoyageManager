@@ -2,10 +2,8 @@
 // services/transport.js — comparateur voiture / avion (estimation)
 // Estimations paramétrables, prêtes à être remplacées par des API.
 // ============================================================
-import { haversine, roadDistance } from './geo.js';
-import { AIRPORTS } from '../data/airports.js';
 
-export const DEFAULTS = {
+const DEFAULTS = {
   conso: 6.5,        // L/100km
   prix: 1.85,        // €/L
   tollRate: 0.075,   // €/km sur autoroute
@@ -15,7 +13,7 @@ export const DEFAULTS = {
 };
 
 /** Les n aéroports les plus proches d'un point [lat, lon]. */
-export function nearestAirports(coords, n = 3) {
+function nearestAirports(coords, n = 3) {
   return AIRPORTS
     .map(a => ({ ...a, dist: Math.round(haversine(coords, a.coords)) }))
     .sort((x, y) => x.dist - y.dist)
@@ -24,7 +22,7 @@ export function nearestAirports(coords, n = 3) {
 }
 
 /** Comparatif voiture entre deux points, avec/sans péages. */
-export function compareCar(from, to, opt = {}) {
+function compareCar(from, to, opt = {}) {
   const o = { ...DEFAULTS, ...opt };
   const km = roadDistance(from, to);
   const fuel = km / 100 * o.conso * o.prix;
@@ -44,7 +42,7 @@ export function compareCar(from, to, opt = {}) {
 }
 
 /** Comparatif avion : aéroport de départ → coordonnées d'arrivée. */
-export function comparePlane(from, to, opt = {}) {
+function comparePlane(from, to, opt = {}) {
   const o = { ...DEFAULTS, ...opt };
   const dep = opt.depAirport || nearestAirports(from, 1)[0];
   const km = haversine(dep.coords, to);
@@ -60,7 +58,7 @@ export function comparePlane(from, to, opt = {}) {
 }
 
 /** Recommandation simple selon distance routière et pays. */
-export function recommend(dest, car) {
+function recommend(dest, car) {
   const inFrance = /France/i.test(dest.pays || '');
   if (inFrance && car.km <= 800) return 'voiture';
   return 'avion';

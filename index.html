@@ -19,10 +19,12 @@
   <button class="nav-btn" onclick="showPage('destinations')">🗺️ Destinations</button>
   <button class="nav-btn" onclick="showPage('carte')">📍 Carte</button>
   <button class="nav-btn" onclick="showPage('agenda')">📆 Agenda</button>
+  <button class="nav-btn" onclick="showPage('programmes')">🧠 Programmes</button>
   <button class="nav-btn" onclick="showPage('transport')">🚆 Transport</button>
   <button class="nav-btn" onclick="showPage('recherche')">🔍 Recherche</button>
   <button class="nav-btn" onclick="showPage('valises')">🧳 Valises</button>
   <button class="nav-btn" onclick="showPage('budget')">💶 Budget</button>
+  <button class="nav-btn" onclick="showPage('ajouter')">➕ Ajouter</button>
   <div class="nav-spacer"></div>
   <span class="nav-badge">Crète · 6 juillet 2026</span>
 </nav>
@@ -212,6 +214,15 @@
   </div>
 </section>
 
+<!-- ══ PAGE : PROGRAMMES AUTOMATIQUES ════════════════ -->
+<section class="page" id="page-programmes">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap">
+    <h1 style="font-size:1.4rem;font-weight:700">🧠 Programmes automatiques</h1>
+    <span style="color:var(--muted);font-size:.85rem">Génère un itinéraire 3/5/7/10 jours par thème, puis charge-le dans l'agenda.</span>
+  </div>
+  <div id="programmes-mount"></div>
+</section>
+
 <!-- ══ PAGE : TRANSPORT (comparateur voiture / avion) ═ -->
 <section class="page" id="page-transport">
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap">
@@ -219,6 +230,15 @@
     <span style="color:var(--muted);font-size:.85rem">Compare voiture et avion : distance, temps, carburant, péages, temps porte-à-porte.</span>
   </div>
   <div id="transport-mount"></div>
+</section>
+
+<!-- ══ PAGE : AJOUTER (destinations & activités) ═════ -->
+<section class="page" id="page-ajouter">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap">
+    <h1 style="font-size:1.4rem;font-weight:700">➕ Ajouter au catalogue</h1>
+    <span style="color:var(--muted);font-size:.85rem">Crée une destination ou une activité. Recherche d'adresse intégrée + détection de doublons.</span>
+  </div>
+  <div id="forms-mount"></div>
 </section>
 
 <!-- ══ PAGE : RECHERCHE RAPIDE ═══════════════════════ -->
@@ -653,9 +673,13 @@ function openDest(id) {
       <div class="liens-grid">${d.liens.map(l=>`<a class="lien-btn" href="${l.url}" target="_blank">${l.label}</a>`).join('')}</div>
     </div>` : ''}
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" onclick="closeModal();showPage('valises');document.getElementById('valise-dest-select').value='${d.id}';loadValise()">🧳 Valises</button>
+      <button class="btn btn-success btn-sm" onclick="window.vmCreateTrip&&window.vmCreateTrip('${d.id}')">➕ Créer / ouvrir le voyage</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal();showPage('valises');document.getElementById('valise-dest-select').value='${d.id}';loadValise()">🧳 Valises</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal();window.vmGoTo&&window.vmGoTo('transport','${d.id}')">🚆 Transport</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal();window.vmGoTo&&window.vmGoTo('programmes','${d.id}')">🧠 Programme</button>
       <button class="btn btn-outline btn-sm" onclick="closeModal();showPage('recherche');document.getElementById('search-dest-select').value='${d.id}';updateSearchLinks()">🔍 Réserver</button>
       <button class="btn btn-outline btn-sm" onclick="closeModal();showPage('carte');setTimeout(()=>focusMap('${d.id}'),400)">📍 Sur la carte</button>
+      <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${d.routard&&d.routard.url ? d.routard.url : 'https://www.google.com/search?q='+encodeURIComponent('guide du routard '+d.nom)}">🧭 Guide du Routard</a>
     </div>
   `;
 
@@ -1203,7 +1227,7 @@ function mapsLink(item, dest) {
 // ════════════════════════════════════════════════════════
 //  AGENDA DYNAMIQUE — grille jours × heures, drag & drop
 // ════════════════════════════════════════════════════════
-const HOUR_PX = 56;            // hauteur d'une heure
+const HOUR_PX = 66;            // hauteur d'une heure
 const SLOT_MIN = 30;           // pas d'accroche (snap)
 const MIN_DUR = 30;            // durée minimale d'un bloc
 const PX_PER_MIN = HOUR_PX / 60;
@@ -1465,7 +1489,7 @@ function agRender() {
     cols += `<div class="ag-daycol ${chill}" data-day="${iso}" style="height:${bodyH}px">${slotLines()}${blocks}</div>`;
   });
 
-  const cssCols = `64px repeat(${days.length}, minmax(150px,1fr))`;
+  const cssCols = `70px repeat(${days.length}, minmax(185px,1fr))`;
   document.getElementById('agenda-content').innerHTML = `
     <div class="agenda-layout">
       <div class="palette">
@@ -1714,8 +1738,20 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 </script>
-<!-- Modules ES — fondation plateforme (voyages + suivi d'avancement) -->
-<script type="module" src="js/views/trips.js"></script>
-<script type="module" src="js/views/transport.js"></script>
+<!-- Scripts classic — ordre de dépendances, compatible file:// (pas d'ES modules) -->
+<script src="js/model.js"></script>
+<script src="js/store.js"></script>
+<script src="js/services/geo.js"></script>
+<script src="js/data/airports.js"></script>
+<script src="js/services/flights.js"></script>
+<script src="js/services/transport.js"></script>
+<script src="js/services/geocode.js"></script>
+<script src="js/services/programs.js"></script>
+<script src="js/services/routard.js"></script>
+<script src="js/services/dossier.js"></script>
+<script src="js/views/trips.js"></script>
+<script src="js/views/transport.js"></script>
+<script src="js/views/programs.js"></script>
+<script src="js/views/forms.js"></script>
 </body>
 </html>

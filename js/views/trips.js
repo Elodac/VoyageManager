@@ -2,11 +2,7 @@
 // views/trips.js — "Mes voyages" : cartes + suivi d'avancement
 // (Phase 1C — refonte modulaire)
 // ============================================================
-import { load, subscribe, getTrips, getTrip, updateTrip, progress } from '../store.js';
-import {
-  TRIP_STATUS, ELEMENT_STATUS, tripStatusMeta, elStatusMeta,
-  nextElStatus, nextTripStatus,
-} from '../model.js';
+(function () {
 
 // ── Utilitaires de rendu ────────────────────────────────
 function chip(color, label, extra = '') {
@@ -119,10 +115,30 @@ function openTripModal(id) {
       <div class="info-box" style="margin-top:16px;font-size:.8rem">
         💡 Clique sur un statut pour le changer (transport/hébergement) ou faire défiler (activités/statut global). La progression se met à jour automatiquement.
       </div>
+
+      <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">🧰 Outils du voyage</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" data-go="agenda">📆 Agenda</button>
+        <button class="btn btn-outline btn-sm" data-go="programmes">🧠 Programme</button>
+        <button class="btn btn-outline btn-sm" data-go="transport">🚆 Transport</button>
+        <button class="btn btn-outline btn-sm" data-go="valises">🧳 Valise</button>
+        <button class="btn btn-outline btn-sm" data-go="recherche">🔍 Réserver</button>
+        <button class="btn btn-outline btn-sm" data-go="carte">📍 Carte</button>
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" data-dossier>📄 Imprimer / Générer le dossier de voyage</button>
+        <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${routardUrl((window.DESTINATIONS||[]).find(d=>d.id===t.destinationId)||{nom:t.nom})}">🧭 Guide du Routard</a>
+      </div>
     </div>`;
 
   // Handlers (délégation)
   m.querySelector('[data-close]').addEventListener('click', () => ov.classList.add('hidden'));
+  m.querySelector('[data-dossier]').addEventListener('click', () => openDossier(getTrip(id)));
+  m.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
+    ov.classList.add('hidden');
+    vmGoTo(b.dataset.go, t.destinationId);
+  }));
 
   m.querySelector('#trip-global-status').addEventListener('click', e => {
     const b = e.target.closest('[data-trip-status]'); if (!b) return;
@@ -150,12 +166,37 @@ function openTripModal(id) {
   ov.classList.remove('hidden');
 }
 
-// Exposé pour usage éventuel depuis le code legacy (onclick inline)
+// ── Navigation inter-pages (pré-sélectionne la destination) ──
+function vmGoTo(page, destId) {
+  window.showPage(page);
+  setTimeout(() => {
+    if (page === 'transport' && window.transportSelect) window.transportSelect(destId);
+    else if (page === 'programmes' && window.programsSelect) window.programsSelect(destId);
+    else if (page === 'agenda') { const s = document.getElementById('ag-dest-select'); if (s) { s.value = destId; window.agOnDestChange && window.agOnDestChange(); } }
+    else if (page === 'valises') { const s = document.getElementById('valise-dest-select'); if (s) { s.value = destId; window.loadValise && window.loadValise(); } }
+    else if (page === 'recherche') { const s = document.getElementById('search-dest-select'); if (s) { s.value = destId; window.updateSearchLinks && window.updateSearchLinks(); } }
+    else if (page === 'carte') { window.focusMap && window.focusMap(destId); }
+  }, 80);
+}
+
+/** Crée (ou retrouve) un voyage à partir d'une destination du catalogue. */
+function vmCreateTrip(destId) {
+  const dest = (window.DESTINATIONS || []).find(d => d.id === destId);
+  if (!dest) return;
+  let trip = getTripByDestination(destId);
+  if (!trip) { trip = addTrip(tripFromDestination(dest)); window.showToast && window.showToast('🧳 Voyage créé !'); }
+  if (window.closeModal) window.closeModal();
+  openTripModal(trip.id);
+}
+
+// Exposé pour usage depuis le code legacy (onclick inline) et les autres vues
 window.openTripModal = openTripModal;
+window.vmGoTo = vmGoTo;
+window.vmCreateTrip = vmCreateTrip;
 
 // ── Bootstrap ───────────────────────────────────────────
 function init() {
-  load();
+  loadStore();
   renderMount();
   subscribe(renderMount);
   const mount = document.getElementById('trips-mount');
@@ -169,3 +210,4 @@ function init() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
+})();

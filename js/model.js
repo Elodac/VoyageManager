@@ -4,7 +4,7 @@
 // ============================================================
 
 /** Statut global d'un voyage, ordonné de l'idée à l'archivage. */
-export const TRIP_STATUS = [
+const TRIP_STATUS = [
   { key: 'idee',          label: '💡 Idée',                color: '#8892a4' },
   { key: 'preparation',   label: '🗂️ En préparation',      color: '#f59e0b' },
   { key: 'reservations',  label: '🔄 Réservations en cours',color: '#f59e0b' },
@@ -16,7 +16,7 @@ export const TRIP_STATUS = [
 ];
 
 /** Statuts par type d'élément (transport / hébergement / activité). */
-export const ELEMENT_STATUS = {
+const ELEMENT_STATUS = {
   transport: [
     { key: 'non_reserve', label: 'Non réservé', color: '#8892a4' },
     { key: 'reserve',     label: 'Réservé',     color: '#f59e0b' },
@@ -36,16 +36,16 @@ export const ELEMENT_STATUS = {
   ],
 };
 
-export const tripStatusMeta = (key) => TRIP_STATUS.find(s => s.key === key) || TRIP_STATUS[0];
-export const elStatusMeta = (type, key) => (ELEMENT_STATUS[type] || []).find(s => s.key === key) || ELEMENT_STATUS[type][0];
+const tripStatusMeta = (key) => TRIP_STATUS.find(s => s.key === key) || TRIP_STATUS[0];
+const elStatusMeta = (type, key) => (ELEMENT_STATUS[type] || []).find(s => s.key === key) || ELEMENT_STATUS[type][0];
 
 /** Renvoie la clé du statut suivant dans le cycle (pour les chips cliquables). */
-export function nextElStatus(type, key) {
+function nextElStatus(type, key) {
   const arr = ELEMENT_STATUS[type];
   const i = arr.findIndex(s => s.key === key);
   return arr[(i + 1) % arr.length].key;
 }
-export function nextTripStatus(key) {
+function nextTripStatus(key) {
   const i = TRIP_STATUS.findIndex(s => s.key === key);
   return TRIP_STATUS[(i + 1) % TRIP_STATUS.length].key;
 }
@@ -60,7 +60,7 @@ function elNorm(type, key) {
  * Progression globale d'un voyage en % :
  * moitié = position du statut global, moitié = moyenne des statuts d'éléments.
  */
-export function computeTripProgress(trip) {
+function computeTripProgress(trip) {
   const els = [];
   if (trip.transport)  els.push(elNorm('transport', trip.transport.status));
   if (trip.hebergement) els.push(elNorm('hebergement', trip.hebergement.status));
@@ -87,7 +87,7 @@ const newId = () => 't' + Date.now().toString(36) + (_seq++).toString(36);
  * Les statuts d'éléments sont pré-positionnés intelligemment :
  * un voyage confirmé démarre transport + hébergement "confirmés".
  */
-export function tripFromDestination(dest, overrides = {}) {
+function tripFromDestination(dest, overrides = {}) {
   const confirmed = dest.statut === 'confirme';
   const activites = (dest.pois || []).slice(0, 6).map(p => ({
     nom: p.nom,
