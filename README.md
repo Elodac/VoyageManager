@@ -13,7 +13,7 @@ Une application web moderne permettant de gérer ses destinations, son budget, s
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![Leaflet](https://img.shields.io/badge/Leaflet-199900?style=for-the-badge&logo=leaflet&logoColor=white)
-![License](https://img.shields.io/github/license/TON_PSEUDO/VoyageManager?style=for-the-badge)
+![License](https://img.shields.io/github/license/Elodac/VoyageManager?style=for-the-badge)
 
 </div>
 
@@ -170,7 +170,7 @@ Aucune base de données n'est nécessaire.
 ## Cloner le dépôt
 
 ```bash
-git clone https://github.com/VOTRE_PSEUDO/VoyageManager.git
+git clone https://github.com/Elodac/VoyageManager.git
 ```
 
 ## Aller dans le dossier
