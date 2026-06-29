@@ -8,8 +8,12 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles/tokens.css">
-<link rel="stylesheet" href="styles/main.css">
+<script>
+(function(){var v='?v='+Date.now();
+document.write('<link rel="stylesheet" href="styles/tokens.css'+v+'">');
+document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
+})();
+</script>
 </head>
 <body>
 
@@ -51,8 +55,8 @@
     </div>
     <div class="hero-actions">
       <button class="btn btn-success" onclick="openDest('heraklion')">📋 Voir la fiche</button>
-      <button class="btn btn-outline btn-sm" onclick="showPage('valises')">🧳 Préparer valises</button>
-      <button class="btn btn-outline btn-sm" onclick="showPage('carte');setTimeout(()=>focusMap('heraklion'),300)">📍 Sur la carte</button>
+      <button class="btn btn-outline" onclick="showPage('valises')">🧳 Préparer valises</button>
+      <button class="btn btn-outline" onclick="showPage('carte');setTimeout(()=>focusMap('heraklion'),300)">📍 Sur la carte</button>
     </div>
   </div>
 
@@ -159,8 +163,13 @@
     <button class="filtre-btn" data-filtre="plage" onclick="setFiltre('plage')">🏖️ Plage</button>
     <button class="filtre-btn" data-filtre="ville" onclick="setFiltre('ville')">🏙️ Ville</button>
     <button class="filtre-btn" data-filtre="nature" onclick="setFiltre('nature')">🌿 Nature</button>
+    <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <span style="font-size:.72rem;color:var(--muted)">Vue :</span>
+      <button class="filtre-btn active" id="view-grid-btn" onclick="setViewMode('grid')" title="Grille">⊞ Grille</button>
+      <button class="filtre-btn" id="view-continent-btn" onclick="setViewMode('continent')" title="Grouper par continent">🌍 Par continent</button>
+    </span>
   </div>
-  <div class="grid grid-4" id="dest-grid"></div>
+  <div id="dest-grid"></div>
 </section>
 
 <!-- ══ PAGE : CARTE ═══════════════════════════════════ -->
@@ -399,10 +408,48 @@ let currentPage = 'dashboard';
 let currentFiltre = 'all';
 let currentSearchQuery = '';
 let currentDest = null;
+let viewMode = 'grid'; // 'grid' | 'continent'
 let map = null;
 let mapMarkers = [];
 let poiMarkers = [];
 let valiseState = {}; // { dest_id: { cat: { item: checked } } }
+
+// ── CONTINENTS ─────────────────────────────────────────
+const CONTINENT_MAP = {
+  'Grèce':'Europe','Portugal':'Europe','Italie':'Europe','France':'Europe',
+  'Espagne':'Europe','Pays-Bas':'Europe','Allemagne':'Europe','République Tchèque':'Europe',
+  'Albanie':'Europe','Suède':'Europe','Norvège':'Europe','Croatie':'Europe',
+  'Irlande':'Europe','Écosse':'Europe','Autriche':'Europe',
+  'France (DOM)':'Europe (DOM-TOM)',
+  'France (COM)':'Océanie',
+  'États-Unis':'Amériques','Canada':'Amériques','Bahamas':'Amériques',
+  'Australie':'Océanie',
+  'Maroc':'Afrique','Tunisie':'Afrique',
+  'Japon':'Asie','Thaïlande':'Asie','Vietnam':'Asie',
+};
+const CONTINENT_ORDER = ['Europe','Europe (DOM-TOM)','Amériques','Océanie','Asie','Afrique'];
+const CONTINENT_EMOJI = {
+  'Europe':'🌍','Europe (DOM-TOM)':'🌴','Amériques':'🌎','Océanie':'🌏','Asie':'🌏','Afrique':'🌍'
+};
+
+// ── DEVISES ────────────────────────────────────────────
+const CURRENCIES = {
+  'États-Unis':  { code:'USD', symbol:'$',    rate:1.08,   nom:'Dollar américain' },
+  'Canada':      { code:'CAD', symbol:'CA$',  rate:1.47,   nom:'Dollar canadien' },
+  'Australie':   { code:'AUD', symbol:'A$',   rate:1.64,   nom:'Dollar australien' },
+  'Bahamas':     { code:'BSD', symbol:'B$',   rate:1.08,   nom:'Dollar bahamien' },
+  'Albanie':     { code:'ALL', symbol:'L',    rate:101.5,  nom:'Lek albanais' },
+  'Norvège':     { code:'NOK', symbol:'kr',   rate:11.5,   nom:'Couronne norvégienne' },
+  'Suède':       { code:'SEK', symbol:'kr',   rate:11.2,   nom:'Couronne suédoise' },
+  'République Tchèque':{ code:'CZK', symbol:'Kč', rate:25.3, nom:'Couronne tchèque' },
+  'Écosse':      { code:'GBP', symbol:'£',    rate:0.85,   nom:'Livre sterling' },
+  'Maroc':       { code:'MAD', symbol:'Dh',   rate:10.7,   nom:'Dirham marocain' },
+  'Tunisie':     { code:'TND', symbol:'DT',   rate:3.4,    nom:'Dinar tunisien' },
+  'Japon':       { code:'JPY', symbol:'¥',    rate:162,    nom:'Yen japonais' },
+  'Thaïlande':   { code:'THB', symbol:'฿',    rate:38.5,   nom:'Baht thaïlandais' },
+  'Vietnam':     { code:'VND', symbol:'₫',    rate:27200,  nom:'Dong vietnamien' },
+  'France (COM)':{ code:'XPF', symbol:'F',    rate:119.3,  nom:'Franc CFP' },
+};
 
 // ── INIT ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -562,15 +609,69 @@ function buildDashboard() {
     </div>
   `).join('');
 
-  // Active destinations
-  const actives = DESTINATIONS.filter(d => d.statut === 'planification');
-  document.getElementById('active-dest-grid').innerHTML = actives.map(d => destCardHTML(d)).join('');
+  // Active destinations — avec bouton retrait
+  const hiddenPlanif = new Set(JSON.parse(localStorage.getItem('vm_hidden_planif') || '[]'));
+  const actives = DESTINATIONS.filter(d => d.statut === 'planification' && !hiddenPlanif.has(d.id));
+  const grid = document.getElementById('active-dest-grid');
+  if (actives.length) {
+    grid.className = 'grid grid-4';
+    grid.innerHTML = actives.map(d => {
+      const s = STATUT_CONFIG[d.statut];
+      return `<div class="dest-card" style="position:relative" onclick="openDest('${d.id}')">
+        <button class="planif-dismiss" onclick="event.stopPropagation();dismissPlanif('${d.id}')" title="Retirer du tableau de bord">✕</button>
+        <div class="dest-emoji">${d.emoji}</div>
+        <div class="dest-name">${d.nom}</div>
+        <div class="dest-pays">${d.pays}</div>
+        <span class="badge badge-${s.cls}">${s.label}</span>
+        <div class="dest-budget">💶 ${d.budget_min}–${d.budget_max}€</div>
+        <div class="dest-types">${(d.type||[]).slice(0,3).map(t=>`<span class="type-tag">${TYPE_ICONS[t]||''}${t}</span>`).join('')}</div>
+      </div>`;
+    }).join('');
+  } else {
+    grid.className = '';
+    grid.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Aucune destination en planification affichée. <button class="btn btn-outline btn-sm" onclick="localStorage.removeItem(\'vm_hidden_planif\');buildDashboard()" style="margin-left:8px">↩ Tout réafficher</button></p>';
+  }
+}
+
+function dismissPlanif(id) {
+  const hidden = new Set(JSON.parse(localStorage.getItem('vm_hidden_planif') || '[]'));
+  hidden.add(id);
+  localStorage.setItem('vm_hidden_planif', JSON.stringify([...hidden]));
+  buildDashboard();
 }
 
 function saveTodo(i, val, key) {
   let saved = JSON.parse(localStorage.getItem(key) || '[]');
   saved[i] = val;
   localStorage.setItem(key, JSON.stringify(saved));
+}
+
+// ── DEVISES ────────────────────────────────────────────
+function currencyBlock(pays) {
+  const c = CURRENCIES[pays];
+  if (!c) return '';
+  const amounts = [20, 50, 100, 200, 500];
+  const fmt = (n) => c.rate < 10 ? n.toFixed(2) : Math.round(n).toLocaleString('fr-FR');
+  return `
+    <div style="margin-bottom:16px">
+      <h3 style="font-size:.85rem;font-weight:600;margin-bottom:8px">💱 Monnaie — ${c.nom} (${c.code})</h3>
+      <div class="meteo-row" style="flex-wrap:wrap">
+        ${amounts.map(eur => `
+          <div class="meteo-item">
+            <div class="meteo-val">${fmt(eur * c.rate)} ${c.symbol}</div>
+            <div class="meteo-lbl">${eur} €</div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:.74rem;color:var(--muted);margin-top:6px">Taux indicatif · 1 € ≈ ${c.rate} ${c.code}</div>
+    </div>`;
+}
+
+// ── VUE PAR CONTINENT ─────────────────────────────────
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('view-grid-btn').classList.toggle('active', mode === 'grid');
+  document.getElementById('view-continent-btn').classList.toggle('active', mode === 'continent');
+  renderDestGrid();
 }
 
 // ── DESTINATIONS GRID ──────────────────────────────────
@@ -607,14 +708,45 @@ function renderDestGrid() {
   }).filter(d => !q || d.nom.toLowerCase().includes(q) || d.pays.toLowerCase().includes(q) || (d.type||[]).some(t=>t.includes(q)));
 
   const advActive = advFilter.budget != null || advFilter.depart || advFilter.retour;
-  // Tri : les correspondances d'abord quand un filtre avancé est actif
+  const grid = document.getElementById('dest-grid');
+
+  if (viewMode === 'continent') {
+    // Grouper par continent → pays → destinations (tri alphabétique à chaque niveau)
+    const groups = {};
+    list.forEach(d => {
+      const cont = CONTINENT_MAP[d.pays] || 'Autre';
+      if (!groups[cont]) groups[cont] = {};
+      if (!groups[cont][d.pays]) groups[cont][d.pays] = [];
+      groups[cont][d.pays].push(d);
+    });
+    const continents = CONTINENT_ORDER.filter(c => groups[c]).concat(
+      Object.keys(groups).filter(c => !CONTINENT_ORDER.includes(c)).sort()
+    );
+    grid.className = '';
+    grid.innerHTML = continents.map(cont => {
+      const countries = Object.keys(groups[cont]).sort((a,b) => a.localeCompare(b,'fr'));
+      return `<div class="continent-section">
+        <div class="continent-header">${CONTINENT_EMOJI[cont]||'🌐'} ${cont}</div>
+        ${countries.map(pays => {
+          const dests = groups[cont][pays].sort((a,b) => a.nom.localeCompare(b.nom,'fr'));
+          return `<div class="country-group">
+            <div class="country-label">🏳 ${pays} <span style="color:var(--accent);font-weight:400">(${dests.length})</span></div>
+            <div class="grid grid-4">${dests.map(d => advActive ? destCardHTML(d, matchAdvFilter(d)) : destCardHTML(d)).join('')}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  grid.className = 'grid grid-4';
   if(advActive) {
     const rank = { ok:0, flex:1, no:2 };
     list = list.map(d => ({ d, m: matchAdvFilter(d) }))
                .sort((a,b) => rank[a.m] - rank[b.m]);
-    document.getElementById('dest-grid').innerHTML = list.map(x => destCardHTML(x.d, x.m)).join('');
+    grid.innerHTML = list.map(x => destCardHTML(x.d, x.m)).join('');
   } else {
-    document.getElementById('dest-grid').innerHTML = list.map(d => destCardHTML(d)).join('');
+    grid.innerHTML = list.map(d => destCardHTML(d)).join('');
   }
 }
 
@@ -681,6 +813,7 @@ function openDest(id) {
       <h3 style="font-size:.85rem;font-weight:600;margin-bottom:8px">💶 Budget estimé</h3>
       <div style="font-size:1.2rem;font-weight:700;color:var(--green)">${d.budget_min}€ – ${d.budget_max}€ <span style="font-size:.8rem;color:var(--muted);font-weight:400">pour 2 personnes</span></div>
     </div>` : ''}
+    ${currencyBlock(d.pays)}
     ${d.urgences ? `
     <div style="margin-bottom:16px">
       <h3 style="font-size:.85rem;font-weight:600;margin-bottom:8px">🚨 Urgences</h3>
@@ -966,10 +1099,10 @@ function focusMap(id) {
 // ── RECHERCHE ──────────────────────────────────────────
 function buildSearchSelect() {
   const sel = document.getElementById('search-dest-select');
-  DESTINATIONS.forEach(d => {
+  [...DESTINATIONS].sort((a,b) => a.nom.localeCompare(b.nom,'fr')).forEach(d => {
     const opt = document.createElement('option');
     opt.value = d.id;
-    opt.textContent = `${d.emoji} ${d.nom}`;
+    opt.textContent = `${d.emoji} ${d.nom} — ${d.pays}`;
     sel.appendChild(opt);
   });
 }
@@ -1017,10 +1150,10 @@ function updateSearchLinks() {
 // ── VALISES ────────────────────────────────────────────
 function buildValiseSelect() {
   const sel = document.getElementById('valise-dest-select');
-  DESTINATIONS.forEach(d => {
+  [...DESTINATIONS].sort((a,b) => a.nom.localeCompare(b.nom,'fr')).forEach(d => {
     const opt = document.createElement('option');
     opt.value = d.id;
-    opt.textContent = `${d.emoji} ${d.nom} (${VALISE_TEMPLATES[d.valise_type]?.label || d.valise_type})`;
+    opt.textContent = `${d.emoji} ${d.nom} — ${d.pays} (${VALISE_TEMPLATES[d.valise_type]?.label || d.valise_type})`;
     sel.appendChild(opt);
   });
 }
@@ -1306,10 +1439,10 @@ const FR_MONTHS = ['janv','févr','mars','avr','mai','juin','juil','août','sept
 
 function buildAgendaSelect() {
   const sel = document.getElementById('ag-dest-select');
-  DESTINATIONS.forEach(d => {
+  [...DESTINATIONS].sort((a,b) => a.nom.localeCompare(b.nom,'fr')).forEach(d => {
     const opt = document.createElement('option');
     opt.value = d.id;
-    opt.textContent = `${d.emoji} ${d.nom}`;
+    opt.textContent = `${d.emoji} ${d.nom} — ${d.pays}`;
     sel.appendChild(opt);
   });
 }
@@ -1810,19 +1943,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <!-- Scripts classic — ordre de dépendances, compatible file:// (pas d'ES modules) -->
-<script src="js/model.js"></script>
-<script src="js/store.js"></script>
-<script src="js/services/geo.js"></script>
-<script src="js/data/airports.js"></script>
-<script src="js/services/flights.js"></script>
-<script src="js/services/transport.js"></script>
-<script src="js/services/geocode.js"></script>
-<script src="js/services/programs.js"></script>
-<script src="js/services/routard.js"></script>
-<script src="js/services/dossier.js"></script>
-<script src="js/views/trips.js"></script>
-<script src="js/views/transport.js"></script>
-<script src="js/views/programs.js"></script>
-<script src="js/views/forms.js"></script>
+<script>
+(function(){var v='?v='+Date.now();
+['js/model.js','js/store.js','js/services/geo.js','js/data/airports.js',
+ 'js/services/flights.js','js/services/transport.js','js/services/geocode.js',
+ 'js/services/programs.js','js/services/routard.js','js/services/dossier.js',
+ 'js/views/trips.js','js/views/transport.js','js/views/programs.js','js/views/forms.js'
+].forEach(function(src){document.write('<script src="'+src+v+'"><\/script>');});
+})();
+</script>
 </body>
 </html>

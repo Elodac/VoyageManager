@@ -40,14 +40,17 @@ section.page.active{display:block}
 
 /* ── HERO CONFIRMÉ ─────────────────────────────────── */
 .hero-confirmed{background:linear-gradient(135deg,#0a3d1f 0%,#0f2d44 100%);border:1px solid #22c55e44;border-radius:var(--card-radius);padding:28px;margin-bottom:24px;display:flex;gap:24px;align-items:flex-start;position:relative;overflow:hidden}
-.hero-confirmed::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,#22c55e18 0%,transparent 70%)}
+.hero-confirmed::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,#22c55e18 0%,transparent 70%);pointer-events:none}
 .hero-emoji{font-size:4rem;line-height:1}
 .hero-content{flex:1}
 .hero-content h1{font-size:1.6rem;font-weight:700;margin-bottom:4px}
 .hero-content .hero-sub{color:#86efac;font-size:.9rem;margin-bottom:12px}
 .hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .hero-pill{background:#ffffff14;border:1px solid #ffffff22;border-radius:99px;padding:4px 12px;font-size:.78rem;color:var(--text)}
-.hero-actions{display:flex;flex-direction:column;gap:8px;min-width:160px}
+.hero-actions{display:flex;flex-direction:column;gap:8px;min-width:200px;position:relative;z-index:10}
+.hero-actions .btn{justify-content:center;width:100%;padding:12px 20px;position:relative;z-index:10;cursor:pointer}
+.hero-confirmed .hero-actions .btn-outline{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+.hero-confirmed .hero-actions .btn-outline:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.55)}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;border:none;font-size:.85rem;font-weight:600;transition:all .15s;white-space:nowrap}
 .btn-primary{background:var(--accent);color:#fff}
 .btn-primary:hover{background:#2563eb}
@@ -350,51 +353,75 @@ body:has(#page-transport.active) main{max-width:1600px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
+/* ── BOUTON RETRAIT PLANIFICATION (dashboard) ──────── */
+.planif-dismiss{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:99px;width:24px;height:24px;font-size:.7rem;color:var(--muted);display:flex;align-items:center;justify-content:center;z-index:2;padding:0;line-height:1;transition:all .15s}
+.planif-dismiss:hover{background:var(--red);border-color:#ef444466;color:#fff}
+
+/* ── CONTINENT VIEW (destinations) ─────────────────── */
+.continent-section{margin-bottom:28px}
+.continent-header{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px;padding:10px 0 6px;border-bottom:2px solid var(--border)}
+.country-group{margin-bottom:16px;padding-left:8px;border-left:3px solid var(--border)}
+.country-label{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+
 /* ── RESPONSIVE MOBILE ─────────────────────────────── */
 @media(max-width:640px){
   /* Navigation défilante */
-  nav{padding:0 12px;gap:4px;overflow-x:auto;scrollbar-width:none}
+  nav{padding:0 10px;gap:4px;overflow-x:auto;scrollbar-width:none}
   nav::-webkit-scrollbar{display:none}
-  .nav-brand{font-size:.9rem;margin-right:8px}
-  .nav-btn{padding:5px 10px;font-size:.8rem}
+  .nav-brand{font-size:.85rem;margin-right:6px}
+  .nav-btn{padding:5px 9px;font-size:.78rem;white-space:nowrap}
 
   /* Contenu principal */
-  .main-content{padding:14px 12px}
-  .page-title{font-size:1.2rem}
+  main{padding:14px 10px}
+
+  /* Hero confirmé — empilé verticalement */
+  .hero-confirmed{flex-direction:column;padding:16px;gap:12px}
+  .hero-emoji{font-size:2.5rem}
+  .hero-content h1{font-size:1.1rem}
+  .hero-content .hero-sub{font-size:.8rem}
+  .hero-meta{gap:5px}
+  .hero-pill{font-size:.68rem;padding:3px 8px}
+  .hero-actions{min-width:unset;width:100%}
+  .hero-actions .btn{width:100%}
+
+  /* Countdown */
+  .countdown{gap:8px}
+  .countdown-unit{min-width:52px;padding:8px 10px}
+  .countdown-val{font-size:1.4rem}
+
+  /* Cards */
+  .card{padding:14px 12px}
+
+  /* Filtres avancés */
+  .adv-filter-row{flex-direction:column;gap:10px}
+  .adv-filter-actions{margin-left:0}
+  .adv-field{min-width:unset;width:100%}
+
+  /* Filtres statuts */
+  .filtres{gap:6px}
 
   /* Modales plein écran sur mobile */
   .modal-overlay{padding:0;align-items:flex-end}
-  .modal{border-radius:18px 18px 0 0;max-height:92vh}
-  .modal-header{padding:16px 16px 12px;gap:10px}
-  .modal-header h2{font-size:1.1rem}
+  .modal{border-radius:18px 18px 0 0;max-height:94vh;width:100%}
+  .modal-header{padding:16px 14px 12px;gap:10px}
+  .modal-header h2{font-size:1rem}
   .modal-header .modal-emoji{font-size:1.8rem}
   .modal-body{padding:14px}
-  .modal-tabs{padding:10px 14px 0;gap:2px;overflow-x:auto;scrollbar-width:none}
-  .modal-tab{padding:6px 12px;font-size:.78rem;white-space:nowrap}
+  .modal-tabs{padding:10px 12px 0;gap:2px;overflow-x:auto;scrollbar-width:none}
+  .modal-tabs::-webkit-scrollbar{display:none}
+  .modal-tab{padding:6px 10px;font-size:.76rem;white-space:nowrap}
+  .modal-close{width:28px;height:28px;flex-shrink:0}
 
-  /* Cartes destinations */
-  .dest-card{flex-direction:column}
-  .dest-card-meta{flex-direction:column;gap:6px}
-
-  /* Cartes voyages */
+  /* Grilles */
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
   .trip-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .poi-grid{grid-template-columns:1fr}
+  .search-grid{grid-template-columns:1fr}
 
   /* Agenda */
   .agenda-layout{grid-template-columns:1fr}
   .palette{position:static}
-  .ag-day-header{font-size:.72rem}
-  .ag-day-name{font-size:.65rem}
-  .time-labels{display:none}
-
-  /* Stats */
-  .stats-row{grid-template-columns:1fr 1fr}
-
-  /* Grille POIs */
-  .poi-grid{grid-template-columns:1fr}
-
-  /* Formulaire Ajouter */
-  .adv-grid{grid-template-columns:1fr}
-  .adv-field{min-width:unset}
 
   /* Boutons outils dans la modale voyage */
   .el-chips{flex-wrap:wrap;gap:6px}
@@ -403,7 +430,17 @@ body:has(#page-transport.active) main{max-width:1600px}
   /* Emoji picker — repositionné */
   .emoji-panel{right:0;left:auto;width:min(300px,90vw)}
 
-  /* Transport / programmes selects */
-  .adv-grid .adv-field select,.adv-grid .adv-field input{font-size:.82rem}
+  /* Formulaire Ajouter */
+  .adv-grid{grid-template-columns:1fr!important}
+
+  /* Carte */
+  section#page-carte.active{padding:10px 10px}
+
+  /* Trip card boutons */
+  .act-item{flex-direction:column;align-items:flex-start;gap:6px}
+
+  /* Budget table */
+  .budget-table{font-size:.76rem}
+  .budget-table th,.budget-table td{padding:7px 8px}
 }
 
