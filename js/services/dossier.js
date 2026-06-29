@@ -120,8 +120,15 @@ function buildDossierHTML(trip) {
 }
 
 function openDossier(trip) {
-  const w = window.open('', '_blank');
-  if (!w) { window.showToast && window.showToast('⚠️ Autorise les pop-ups pour le dossier'); return; }
-  w.document.write(buildDossierHTML(trip));
-  w.document.close();
+  const html = buildDossierHTML(trip);
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

@@ -61,6 +61,7 @@ function elNorm(type, key) {
  * moitié = position du statut global, moitié = moyenne des statuts d'éléments.
  */
 function computeTripProgress(trip) {
+  if (trip.status === 'termine' || trip.status === 'archive') return 100;
   const els = [];
   if (trip.transport)  els.push(elNorm('transport', trip.transport.status));
   if (trip.hebergement) els.push(elNorm('hebergement', trip.hebergement.status));
