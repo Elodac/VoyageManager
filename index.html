@@ -463,6 +463,8 @@ document.addEventListener('DOMContentLoaded', () => {
   buildSearchSelect();
   buildAgendaSelect();
   initCountdown();
+  const savedPage = sessionStorage.getItem('vm_page');
+  if(savedPage && document.getElementById('page-' + savedPage)) showPage(savedPage);
 });
 
 // ── FILTRES AVANCÉS (dates + budget ±tolérance) ───────
@@ -536,6 +538,7 @@ function showPage(id) {
   const btns = document.querySelectorAll('.nav-btn');
   btns.forEach(b => { if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+id+"'")) b.classList.add('active'); });
   currentPage = id;
+  sessionStorage.setItem('vm_page', id);
   if(id === 'carte') {
     if(!map) setTimeout(initMap, 120);
     else setTimeout(() => map.invalidateSize(), 80);
@@ -1185,22 +1188,39 @@ function renderValise(id, tmpl) {
   const state = valiseState[id];
   let totalItems = 0, checkedItems = 0;
 
-  document.getElementById('valise-body').innerHTML = Object.entries(tmpl.categories).map(([cat, defaultItems]) => {
+  const tmplCats = Object.keys(tmpl.categories);
+  const customCats = Object.keys(state).filter(c => !tmplCats.includes(c));
+  const allCats = [...tmplCats, ...customCats];
+
+  const catHTML = allCats.map(cat => {
     const catState = state[cat] || {};
     const allItems = Object.keys(catState);
     const checked = allItems.filter(i => catState[i]);
     totalItems += allItems.length;
     checkedItems += checked.length;
+    const isCustom = !tmplCats.includes(cat);
 
     return `
-      <div class="checklist-cat">
-        <h3>${cat} <span class="cat-count">${checked.length}/${allItems.length}</span></h3>
+      <div class="checklist-cat"
+        ondragover="catDragOver(event,this)"
+        ondragleave="catDragLeave(event,this)"
+        ondrop="catDrop(event,'${id}','${esc(cat)}')">
+        <h3>
+          ${cat} <span class="cat-count">${checked.length}/${allItems.length}</span>
+          ${isCustom ? `<span class="del-cat" onclick="delCategory('${id}','${esc(cat)}')">✕</span>` : ''}
+        </h3>
         <div class="checklist-items">
           ${allItems.map(item => `
             <label class="check-item ${catState[item]?'checked':''}" onclick="">
+              <span class="drag-handle" draggable="true"
+                ondragstart="itemDragStart(event,'${id}','${esc(cat)}','${esc(item)}')"
+                ondragend="itemDragEnd(event)">⠿</span>
               <input type="checkbox" ${catState[item]?'checked':''} onchange="toggleItem('${id}','${esc(cat)}','${esc(item)}',this.checked)">
-              <span>${item}</span>
-              <span class="del-item" onclick="delItem(event,'${id}','${esc(cat)}','${esc(item)}')">🗑</span>
+              <span class="item-text">${item}</span>
+              <span class="item-actions">
+                <span class="edit-item" onclick="editItem(event,'${id}','${esc(cat)}','${esc(item)}',this)">✏</span>
+                <span class="del-item" onclick="delItem(event,'${id}','${esc(cat)}','${esc(item)}')">✕</span>
+              </span>
             </label>
           `).join('')}
         </div>
@@ -1211,6 +1231,12 @@ function renderValise(id, tmpl) {
       </div>
     `;
   }).join('');
+
+  document.getElementById('valise-body').innerHTML = catHTML + `
+    <div class="add-cat-row">
+      <input class="add-cat-input" placeholder="✚ Nouvelle catégorie…" onkeydown="if(event.key==='Enter')addCategory('${id}',this)">
+      <button class="btn btn-outline btn-sm" onclick="addCategory('${id}',this.previousElementSibling)">+</button>
+    </div>`;
 
   const pct = totalItems > 0 ? Math.round(checkedItems / totalItems * 100) : 0;
   document.getElementById('valise-progress').style.width = pct + '%';
@@ -1236,7 +1262,72 @@ function addItem(id, cat, input) {
   if(!val) return;
   if(!valiseState[id][cat]) valiseState[id][cat] = {};
   valiseState[id][cat][val] = false;
-  input.value = '';
+  const d = DESTINATIONS.find(x => x.id === id);
+  const tmpl = VALISE_TEMPLATES[d.valise_type];
+  const tmplCats = Object.keys(tmpl.categories);
+  const allCats = [...tmplCats, ...Object.keys(valiseState[id]).filter(c => !tmplCats.includes(c))];
+  const catIndex = allCats.indexOf(cat);
+  renderValise(id, tmpl);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const inputs = document.querySelectorAll('.add-item-input');
+    if(inputs[catIndex]) inputs[catIndex].focus();
+  }));
+}
+
+function addCategory(id, input) {
+  const val = input.value.trim();
+  if(!val) return;
+  if(!valiseState[id][val]) valiseState[id][val] = {};
+  const d = DESTINATIONS.find(x => x.id === id);
+  renderValise(id, VALISE_TEMPLATES[d.valise_type]);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const inputs = document.querySelectorAll('.add-item-input');
+    if(inputs.length) inputs[inputs.length - 1].focus();
+  }));
+}
+
+function delCategory(id, cat) {
+  cat = unescape_cat(cat);
+  delete valiseState[id][cat];
+  const d = DESTINATIONS.find(x => x.id === id);
+  renderValise(id, VALISE_TEMPLATES[d.valise_type]);
+}
+
+let _dragData = null;
+
+function itemDragStart(e, id, cat, item) {
+  cat = unescape_cat(cat); item = unescape_cat(item);
+  _dragData = { id, cat, item };
+  e.dataTransfer.effectAllowed = 'move';
+  e.stopPropagation();
+  requestAnimationFrame(() => e.currentTarget.closest('.check-item').classList.add('dragging'));
+}
+
+function itemDragEnd(e) {
+  document.querySelectorAll('.check-item.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.checklist-cat.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function catDragOver(e, el) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  el.classList.add('drag-over');
+}
+
+function catDragLeave(e, el) {
+  if (!el.contains(e.relatedTarget)) el.classList.remove('drag-over');
+}
+
+function catDrop(e, id, toCat) {
+  e.preventDefault();
+  toCat = unescape_cat(toCat);
+  document.querySelectorAll('.checklist-cat.drag-over').forEach(el => el.classList.remove('drag-over'));
+  if (!_dragData || _dragData.cat === toCat) { _dragData = null; return; }
+  const { cat: fromCat, item } = _dragData;
+  _dragData = null;
+  if (!valiseState[id][toCat]) valiseState[id][toCat] = {};
+  valiseState[id][toCat][item] = valiseState[id][fromCat][item];
+  delete valiseState[id][fromCat][item];
   const d = DESTINATIONS.find(x => x.id === id);
   renderValise(id, VALISE_TEMPLATES[d.valise_type]);
 }
@@ -1247,6 +1338,61 @@ function delItem(e, id, cat, item) {
   delete valiseState[id][cat][item];
   const d = DESTINATIONS.find(x => x.id === id);
   renderValise(id, VALISE_TEMPLATES[d.valise_type]);
+}
+
+function editItem(e, id, cat, item, btn) {
+  e.preventDefault(); e.stopPropagation();
+  cat = unescape_cat(cat); item = unescape_cat(item);
+  const label = btn.closest('.check-item');
+  const textSpan = label.querySelector('.item-text');
+  const actions = label.querySelector('.item-actions');
+  const checkbox = label.querySelector('input[type=checkbox]');
+
+  textSpan.style.display = 'none';
+  actions.style.display = 'none';
+  checkbox.style.display = 'none';
+
+  const input = document.createElement('input');
+  input.className = 'item-edit-input';
+  input.value = item;
+
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = '✓';
+  saveBtn.style.cssText = 'background:#22c55e;color:#fff;border:none;border-radius:5px;padding:3px 9px;cursor:pointer;font-size:.8rem;flex-shrink:0';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '✕';
+  cancelBtn.style.cssText = 'background:var(--bg3);color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:.8rem;flex-shrink:0';
+
+  label.appendChild(input);
+  label.appendChild(saveBtn);
+  label.appendChild(cancelBtn);
+  input.focus(); input.select();
+
+  const save = () => {
+    const newVal = input.value.trim();
+    if (newVal) {
+      const checked = valiseState[id][cat][item];
+      if (newVal !== item) {
+        delete valiseState[id][cat][item];
+        valiseState[id][cat][newVal] = checked;
+      }
+    }
+    const d = DESTINATIONS.find(x => x.id === id);
+    renderValise(id, VALISE_TEMPLATES[d.valise_type]);
+  };
+
+  const cancel = () => {
+    const d = DESTINATIONS.find(x => x.id === id);
+    renderValise(id, VALISE_TEMPLATES[d.valise_type]);
+  };
+
+  saveBtn.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); save(); };
+  cancelBtn.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); cancel(); };
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); save(); }
+    if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+  });
 }
 
 function unescape_cat(s) { return s.replace(/\\'/g,"'"); }
@@ -1379,13 +1525,178 @@ function mapsLink(item, dest) {
 // ════════════════════════════════════════════════════════
 //  AGENDA DYNAMIQUE — grille jours × heures, drag & drop
 // ════════════════════════════════════════════════════════
-const HOUR_PX = 66;            // hauteur d'une heure
-const SLOT_MIN = 30;           // pas d'accroche (snap)
-const MIN_DUR = 30;            // durée minimale d'un bloc
+const HOUR_PX = 84;            // hauteur d'une heure
+const SLOT_MIN = 15;           // pas d'accroche (snap)
+const MIN_DUR = 15;            // durée minimale d'un bloc
 const PX_PER_MIN = HOUR_PX / 60;
 
 let agendaState = {};          // { destId: { start, end, hstart, hend, blocks:[], chillDays:{} } }
 let agCurrent = null;          // destId courant
+let _agHistory = [];           // undo stack (snapshots JSON des blocks)
+const AG_HIST_MAX = 30;
+
+function agPushHistory() {
+  if(!agCurrent) return;
+  _agHistory.push(JSON.stringify(agendaState[agCurrent].blocks));
+  if(_agHistory.length > AG_HIST_MAX) _agHistory.shift();
+}
+
+function agUndo() {
+  if(!agCurrent || !_agHistory.length) { showToast('⚠️ Rien à annuler'); return; }
+  agendaState[agCurrent].blocks = JSON.parse(_agHistory.pop());
+  agSaveState(); agRender();
+  showToast('↩️ Annulation');
+}
+
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    if(document.getElementById('page-agenda').classList.contains('active')) {
+      e.preventDefault(); agUndo();
+    }
+  }
+});
+
+let _agPaletteCollapsed = false;
+let _agOverlapIds = new Set();
+let _agLastDragEnd = 0;
+
+function agTogglePalette() {
+  _agPaletteCollapsed = !_agPaletteCollapsed;
+  const layout = document.querySelector('.agenda-layout');
+  if(layout) layout.classList.toggle('pal-collapsed', _agPaletteCollapsed);
+  const btn = document.getElementById('pal-toggle-btn');
+  if(btn) btn.textContent = _agPaletteCollapsed ? '▶' : '◀';
+}
+
+function agDrawNow() {
+  if(!agCurrent) return;
+  const st = agendaState[agCurrent];
+  const now = new Date();
+  const todayISO = now.toISOString().slice(0,10);
+  const col = document.querySelector(`.ag-daycol[data-day="${todayISO}"]`);
+  if(!col) return;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  if(nowMin < st.hstart * 60 || nowMin > st.hend * 60) return;
+  const top = (nowMin - st.hstart * 60) * PX_PER_MIN;
+  const line = document.createElement('div');
+  line.className = 'ag-now-line';
+  line.style.top = top + 'px';
+  col.appendChild(line);
+  const wrap = col.closest('.grid-wrap');
+  if(wrap && wrap.scrollTop === 0) wrap.scrollTop = Math.max(0, top - 120);
+}
+
+function agBindQuickAdd() {
+  document.querySelectorAll('.ag-daycol').forEach(col => {
+    col.addEventListener('click', e => {
+      if(Date.now() - _agLastDragEnd < 350) return;
+      if(e.target.closest('.ag-block') || e.target.classList.contains('blk-del')) return;
+      const day = col.dataset.day;
+      const st = agendaState[agCurrent];
+      const rect = col.getBoundingClientRect();
+      const rawMin = st.hstart * 60 + (e.clientY - rect.top) / PX_PER_MIN;
+      const snapped = Math.round(rawMin / SLOT_MIN) * SLOT_MIN;
+      agOpenQuickAdd(e, day, snapped);
+    });
+  });
+}
+
+function agOpenQuickAdd(e, day, startMin) {
+  document.getElementById('ag-edit-popup')?.remove();
+  if(!agCurrent) return;
+  const st = agendaState[agCurrent];
+  const m2t = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const endMin = Math.min(startMin + 60, st.hend * 60);
+  const dur = endMin - startMin;
+  const typeOpts = Object.keys(AG_COLORS).map(k =>
+    `<option value="${k}">${k}</option>`).join('');
+  const popup = document.createElement('div');
+  popup.id = 'ag-edit-popup';
+  popup.className = 'ag-edit-popup';
+  popup.dataset.mode = 'new';
+  popup.dataset.day = day;
+  popup.innerHTML = `
+    <div class="ag-ep-header">
+      <strong>Nouveau bloc</strong>
+      <button class="ag-ep-close" onclick="document.getElementById('ag-edit-popup').remove()">✕</button>
+    </div>
+    <div class="ag-ep-row">
+      <input class="ag-ep-emoji" id="ep-emoji" value="" placeholder="🎯" maxlength="4">
+      <input class="ag-ep-label" id="ep-label" placeholder="Libellé…">
+    </div>
+    <div class="ag-ep-row" style="gap:6px">
+      <label>Début</label>
+      <input type="time" id="ep-start" value="${m2t(startMin)}" step="900" oninput="agEpSync('start')" style="flex:1">
+      <label>Fin</label>
+      <input type="time" id="ep-end" value="${m2t(endMin)}" step="900" oninput="agEpSync('end')" style="flex:1">
+    </div>
+    <div class="ag-ep-row">
+      <label>Durée</label>
+      <input type="number" id="ep-dur" value="${dur}" min="15" max="720" step="15" style="width:68px" oninput="agEpSync('dur')"> min
+      <span id="ep-dur-h" style="font-size:.75rem;color:var(--muted);margin-left:6px">${agDurLabel(dur)}</span>
+    </div>
+    <div class="ag-ep-row">
+      <label>Type</label>
+      <select id="ep-type" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:.84rem">
+        ${typeOpts}
+      </select>
+    </div>
+    <div class="ag-ep-row" style="align-items:flex-start">
+      <label style="margin-top:5px">Notes</label>
+      <textarea id="ep-notes" rows="2" placeholder="Adresse, lien, infos…"></textarea>
+    </div>
+    <div class="ag-ep-actions">
+      <button class="btn btn-success btn-sm" onclick="agQuickAddSave()">✓ Ajouter</button>
+    </div>`;
+  document.body.appendChild(popup);
+  const px = Math.min(e.clientX + 12, window.innerWidth - 315);
+  const py = Math.min(e.clientY - 20, window.innerHeight - 390);
+  popup.style.left = Math.max(8, px) + 'px';
+  popup.style.top  = Math.max(8, py) + 'px';
+  popup.querySelector('#ep-label').focus();
+  setTimeout(() => {
+    function outside(ev) {
+      if(!document.getElementById('ag-edit-popup')?.contains(ev.target)) {
+        document.getElementById('ag-edit-popup')?.remove();
+        document.removeEventListener('pointerdown', outside);
+      }
+    }
+    document.addEventListener('pointerdown', outside);
+  }, 150);
+}
+
+function agQuickAddSave() {
+  const popup = document.getElementById('ag-edit-popup');
+  if(!popup || popup.dataset.mode !== 'new') return;
+  const day = popup.dataset.day;
+  const t2m = s => { const [h, m] = (s || '0:0').split(':').map(Number); return h * 60 + m; };
+  const label = document.getElementById('ep-label').value.trim() || 'Nouveau bloc';
+  const emoji = document.getElementById('ep-emoji').value.trim();
+  const start = t2m(document.getElementById('ep-start').value);
+  const end   = t2m(document.getElementById('ep-end').value);
+  const type  = document.getElementById('ep-type').value || 'activite';
+  const notes = document.getElementById('ep-notes').value.trim();
+  const dur   = Math.max(15, end - start);
+  agPushHistory();
+  agendaState[agCurrent].blocks.push({ id: agId(), day, start, dur, type, emoji, label, notes });
+  agSaveState();
+  popup.remove();
+  agRender();
+  showToast('✓ Bloc ajouté');
+}
+
+function agDuplicateBlock(id) {
+  const st = agendaState[agCurrent];
+  const b = st.blocks.find(x => x.id === id);
+  if(!b) return;
+  agPushHistory();
+  const newStart = Math.min(b.start + b.dur, st.hend * 60 - b.dur);
+  st.blocks.push({ ...b, id: agId(), start: newStart });
+  agSaveState();
+  document.getElementById('ag-edit-popup')?.remove();
+  agRender();
+  showToast('📋 Bloc dupliqué');
+}
 
 // Couleurs par type de bloc
 const AG_COLORS = {
@@ -1456,6 +1767,7 @@ function agSaveState() { localStorage.setItem('voyagemanager_agenda', JSON.strin
 function agOnDestChange() {
   const id = document.getElementById('ag-dest-select').value;
   agCurrent = id || null;
+  _agHistory = [];
   if(!id) { document.getElementById('agenda-content').innerHTML = '<div class="ag-empty-hint">👆 Choisis une destination pour générer la grille de planning.</div>'; return; }
   const d = DESTINATIONS.find(x => x.id === id);
   const preset = AGENDA_PRESETS[id];
@@ -1515,62 +1827,104 @@ function agPrint() {
   const st = agendaState[agCurrent];
   const d = DESTINATIONS.find(x => x.id === agCurrent);
   const days = dayList(st.start, st.end);
-  const today = new Date().toLocaleDateString('fr-FR');
+  const today = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+  const totalMin = st.blocks.reduce((s, b) => s + b.dur, 0);
 
   const daysHTML = days.map(iso => {
     const dh = fmtDayHead(iso);
-    const blocks = st.blocks.filter(b => b.day === iso).sort((a,b) => a.start - b.start);
-    const rows = blocks.length ? blocks.map(b => `
-      <tr>
-        <td class="t">${fmtTime(b.start)}–${fmtTime(b.start+b.dur)}</td>
-        <td class="b" style="border-left:4px solid ${AG_COLORS[b.type]||'#3b82f6'}">${b.emoji||''} ${b.label}</td>
-      </tr>`).join('') : '<tr><td class="t">—</td><td class="b" style="color:#999">Journée libre</td></tr>';
-    return `
-      <section class="day">
-        <h2>${dh.day} ${dh.date}${st.chillDays[iso]?' &nbsp;<span class="chill">😎 chill</span>':''}</h2>
-        <table>${rows}</table>
-      </section>`;
+    const blocks = st.blocks.filter(b => b.day === iso).sort((a, b) => a.start - b.start);
+    const dayMin = blocks.reduce((s, b) => s + b.dur, 0);
+    const chillBadge = st.chillDays[iso] ? '<span class="chill-badge">😎 chill</span>' : '';
+    const dayStat = dayMin > 0 ? `<span class="day-stat">${agDurLabel(dayMin)}</span>` : '';
+    const rows = blocks.length ? blocks.map(b => {
+      const color = AG_COLORS[b.type] || '#3b82f6';
+      const noteHTML = b.notes ? `<div class="blk-note">${b.notes}</div>` : '';
+      return `<div class="blk-row" style="border-left:4px solid ${color}">
+        <div class="blk-head">
+          <span class="blk-time">${fmtTime(b.start)} – ${fmtTime(b.start+b.dur)}</span>
+          <span class="blk-dur">${agDurLabel(b.dur)}</span>
+        </div>
+        <div class="blk-title">${b.emoji||''} ${b.label}</div>${noteHTML}
+      </div>`;
+    }).join('') : '<div class="free-day">Journée libre</div>';
+    return `<div class="day">
+      <div class="day-head">
+        <span class="dh-name">${dh.day}</span>
+        <span class="dh-date">${dh.date}</span>
+        <span class="dh-meta">${chillBadge}${dayStat}</span>
+      </div>
+      <div class="day-body">${rows}</div>
+    </div>`;
   }).join('');
 
   const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
   <title>Planning — ${d.nom}</title>
   <style>
-    *{box-sizing:border-box}
-    body{font-family:'Segoe UI',Arial,sans-serif;color:#111;margin:24px;font-size:12px}
-    header{border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}
-    header h1{font-size:20px;margin:0}
-    header .sub{font-size:11px;color:#444;margin-top:4px}
-    header .count{font-size:11px;color:#444;text-align:right}
-    .grid{column-count:2;column-gap:24px}
-    .day{break-inside:avoid;margin-bottom:14px}
-    .day h2{font-size:13px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid #999;padding-bottom:3px;margin:0 0 6px}
-    .day h2 .chill{font-size:10px;color:#7c3aed;text-transform:none;letter-spacing:0}
-    table{width:100%;border-collapse:collapse}
-    td{padding:3px 4px;vertical-align:top;font-size:11.5px;line-height:1.3}
-    td.t{white-space:nowrap;color:#444;font-variant-numeric:tabular-nums;width:90px;font-weight:600}
-    td.b{padding-left:8px}
-    tr+tr td{border-top:1px dotted #ddd}
-    footer{margin-top:18px;border-top:1px solid #ccc;padding-top:8px;font-size:10px;color:#888;display:flex;justify-content:space-between}
-    @media print{ body{margin:12mm} .no-print{display:none} }
-    .toolbar button{font-size:13px;padding:8px 16px;border-radius:6px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;background:#fff;font-size:11px}
+    .page{padding:14mm 12mm 10mm}
+    .rpt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2.5px solid #1e293b;padding-bottom:10px;margin-bottom:16px}
+    .rpt-header h1{font-size:17px;font-weight:700;margin-bottom:3px}
+    .rpt-header .rh-sub{font-size:10px;color:#475569;line-height:1.6}
+    .rpt-header .rh-right{text-align:right;font-size:10px;color:#64748b;line-height:1.7}
+    .rpt-header .rh-total{font-weight:700;color:#3730a3}
+    .days-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .day{break-inside:avoid;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;overflow:hidden}
+    .day-head{background:#1e293b;color:#fff;padding:5px 9px;display:flex;align-items:center;gap:7px}
+    .dh-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .dh-date{font-size:10px;opacity:.75;flex:1}
+    .dh-meta{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+    .chill-badge{font-size:8.5px;background:rgba(167,139,250,.3);border-radius:99px;padding:1px 5px;color:#c4b5fd}
+    .day-stat{font-size:8.5px;background:rgba(99,102,241,.3);border-radius:99px;padding:1px 5px;color:#a5b4fc}
+    .day-body{padding:6px}
+    .blk-row{background:#fff;border-radius:4px;border-left:4px solid #3b82f6;padding:4px 7px;margin-bottom:4px;box-shadow:0 1px 2px #0000000d}
+    .blk-row:last-child{margin-bottom:0}
+    .blk-head{display:flex;align-items:center;gap:5px;margin-bottom:1px}
+    .blk-time{font-size:9.5px;color:#475569;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .blk-dur{font-size:8.5px;color:#94a3b8;margin-left:auto}
+    .blk-title{font-size:10.5px;font-weight:600;color:#1e293b;line-height:1.3}
+    .blk-note{font-size:9px;color:#64748b;margin-top:3px;font-style:italic;line-height:1.4;border-top:1px dotted #e2e8f0;padding-top:3px}
+    .free-day{padding:10px;text-align:center;color:#94a3b8;font-style:italic;font-size:10px}
+    footer{margin-top:12px;border-top:1px solid #e2e8f0;padding-top:7px;font-size:9px;color:#94a3b8;display:flex;justify-content:space-between}
+    @media screen{
+      body{background:#f1f5f9}
+      .page{max-width:900px;margin:0 auto;padding:20px}
+      .toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;display:flex;gap:8px;margin-bottom:14px}
+      .toolbar button{font-size:12px;padding:7px 14px;border-radius:6px;border:none;background:#1e293b;color:#fff;cursor:pointer;font-weight:600}
+      .toolbar button:hover{background:#334155}
+    }
+    @media print{
+      body{background:#fff}
+      .toolbar{display:none}
+      @page{margin:8mm;size:A4 portrait}
+    }
   </style></head><body>
-    <div class="toolbar no-print" style="margin-bottom:16px"><button onclick="window.print()">🖨️ Lancer l'impression</button></div>
-    <header>
+  <div class="page">
+    <div class="toolbar"><button onclick="window.print()">🖨️ Imprimer</button><button onclick="window.close()" style="background:#475569">✕ Fermer</button></div>
+    <div class="rpt-header">
       <div>
-        <h1>📆 Planning — ${d.emoji} ${d.nom}</h1>
-        <div class="sub">${d.pays}${d.dates?' · '+d.dates:''} · ${days.length} jour(s)</div>
+        <h1>${d.emoji} ${d.nom} — Planning de voyage</h1>
+        <div class="rh-sub">${d.pays}${d.dates ? ' · ' + d.dates : ''} · ${days.length} jour${days.length>1?'s':''} · ${st.blocks.length} activité${st.blocks.length>1?'s':''}</div>
       </div>
-      <div class="count">Édité le ${today}</div>
-    </header>
-    <div class="grid">${daysHTML}</div>
-    <footer><span>VoyageManager — Clément &amp; Madame</span><span>Bon voyage ✈️</span></footer>
-    <script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script>
+      <div class="rh-right">
+        <div>Édité le ${today}</div>
+        ${totalMin > 0 ? `<div class="rh-total">⏱ ${agDurLabel(totalMin)} planifiées</div>` : ''}
+      </div>
+    </div>
+    <div class="days-grid">${daysHTML}</div>
+    <footer><span>VoyageManager · Clément &amp; Madame</span><span>Bon voyage ✈️</span></footer>
+  </div>
   </body></html>`;
 
-  const w = window.open('', '_blank');
-  if(!w) { showToast('⚠️ Autorise les pop-ups pour imprimer'); return; }
-  w.document.write(html);
-  w.document.close();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 8000);
 }
 
 function agRebuild() {
@@ -1598,42 +1952,62 @@ function fmtDayHead(iso) { const d = new Date(iso); return { day: FR_DAYS[d.getD
 function agRender() {
   if(!agCurrent) return;
   const st = agendaState[agCurrent];
-  const days = dayList(st.start, st.end);
+
+  // Tri des blocs par jour + heure
+  st.blocks.sort((a, b) => a.day < b.day ? -1 : a.day > b.day ? 1 : a.start - b.start);
+
+  // Détection des chevauchements
+  _agOverlapIds = new Set();
+  const dList = dayList(st.start, st.end);
+  dList.forEach(iso => {
+    const db = st.blocks.filter(b => b.day === iso);
+    db.forEach((b, i) => {
+      for(let j = i + 1; j < db.length; j++) {
+        if(db[j].start < b.start + b.dur) { _agOverlapIds.add(b.id); _agOverlapIds.add(db[j].id); }
+        else break;
+      }
+    });
+  });
+
+  const days = dList;
   const totalMin = (st.hend - st.hstart) * 60;
   const bodyH = totalMin * PX_PER_MIN;
 
-  // Lignes d'heures (gutter)
+  // Gutter heures
   let gutter = '';
   for(let h = st.hstart; h <= st.hend; h++) {
     const top = (h - st.hstart) * HOUR_PX;
     gutter += `<div class="ag-hourlabel" style="position:absolute;top:${top}px;right:0">${String(h).padStart(2,'0')}:00</div>`;
   }
 
-  // En-têtes jours
+  // En-têtes jours avec stat durée
   let heads = '<div class="ag-corner"></div>';
-  days.forEach((iso, i) => {
+  days.forEach(iso => {
     const dh = fmtDayHead(iso);
     const on = st.chillDays[iso] ? 'on' : '';
+    const dayMin = st.blocks.filter(b => b.day === iso).reduce((s, b) => s + b.dur, 0);
+    const stat = dayMin > 0 ? `<div class="dh-stat">${agDurLabel(dayMin)}</div>` : '';
     heads += `<div class="ag-dayhead">
       <div class="dh-day">${dh.day}</div>
       <div class="dh-date">${dh.date}</div>
-      <div class="dh-chill"><button class="chill-toggle ${on}" onclick="agToggleChill('${iso}')">😎 Chill</button></div>
+      ${stat}
+      <div class="dh-chill"><button class="chill-toggle ${on}" onclick="agToggleChill('${iso}')">😎</button></div>
     </div>`;
   });
 
-  // Lignes de slots dans chaque colonne
+  // Lignes de slots
   function slotLines() {
     let s = '';
     for(let h = st.hstart; h < st.hend; h++) {
       for(let m = 0; m < 60; m += SLOT_MIN) {
         const top = ((h - st.hstart) * 60 + m) * PX_PER_MIN;
-        s += `<div class="ag-slotline ${m===0?'hour':''}" style="top:${top}px"></div>`;
+        s += `<div class="ag-slotline ${m===0?'hour':m===30?'half':''}" style="top:${top}px"></div>`;
       }
     }
     return s;
   }
 
-  // Colonnes jours + blocs
+  // Colonnes jours
   let cols = `<div class="ag-timegutter" style="height:${bodyH}px;position:relative">${gutter}</div>`;
   days.forEach(iso => {
     const chill = st.chillDays[iso] ? 'chill' : '';
@@ -1643,16 +2017,22 @@ function agRender() {
 
   const cssCols = `70px repeat(${days.length}, minmax(185px,1fr))`;
   document.getElementById('agenda-content').innerHTML = `
-    <div class="agenda-layout">
+    <div class="agenda-layout${_agPaletteCollapsed ? ' pal-collapsed' : ''}">
       <div class="palette">
-        <div class="pal-hint">↘ Glisse un bloc vers la grille. Sur un bloc posé : déplace-le, redimensionne par le bas, ✕ pour supprimer, double-clic pour renommer.</div>
-        ${Object.entries(AG_PALETTE).map(([cat, items]) => `
-          <h3>${cat}</h3>
-          ${items.map((it, idx) => `
-            <div class="pal-block" data-cat="${cat}" data-idx="${idx}" style="border-left:4px solid ${AG_COLORS[it.type]}">
-              <span class="pal-emoji">${it.emoji}</span><span>${it.label}</span><span class="pal-dur">${Math.round(it.dur/60*10)/10}h</span>
-            </div>`).join('')}
-        `).join('')}
+        <div class="pal-header">
+          <strong>Blocs</strong>
+          <button id="pal-toggle-btn" class="pal-toggle" onclick="agTogglePalette()" title="Masquer/Afficher la palette">${_agPaletteCollapsed ? '▶' : '◀'}</button>
+        </div>
+        <div class="pal-body">
+          <div class="pal-hint">↘ Glisse un bloc · Clique sur la grille pour créer · Double-clic pour modifier</div>
+          ${Object.entries(AG_PALETTE).map(([cat, items]) => `
+            <h3>${cat}</h3>
+            ${items.map((it, idx) => `
+              <div class="pal-block" data-cat="${cat}" data-idx="${idx}" style="border-left:4px solid ${AG_COLORS[it.type]}">
+                <span class="pal-emoji">${it.emoji}</span><span>${it.label}</span><span class="pal-dur">${Math.round(it.dur/60*10)/10}h</span>
+              </div>`).join('')}
+          `).join('')}
+        </div>
       </div>
       <div class="grid-wrap">
         <div class="agenda-grid" style="grid-template-columns:${cssCols}">
@@ -1664,6 +2044,8 @@ function agRender() {
   `;
   agBindPalette();
   agBindBlocks();
+  agBindQuickAdd();
+  agDrawNow();
 }
 
 function agBlockHTML(b) {
@@ -1671,11 +2053,14 @@ function agBlockHTML(b) {
   const top = (b.start - st.hstart*60) * PX_PER_MIN;
   const height = b.dur * PX_PER_MIN;
   const color = AG_COLORS[b.type] || '#3b82f6';
-  return `<div class="ag-block ${b.chill?'chill':''}" data-id="${b.id}"
+  const sz = b.dur <= 20 ? 'sz-xs' : b.dur <= 40 ? 'sz-sm' : '';
+  const ol = _agOverlapIds.has(b.id) ? 'overlap' : '';
+  return `<div class="ag-block ${b.chill?'chill':''} ${sz} ${ol}" data-id="${b.id}"
       style="top:${top}px;height:${height}px;background:${color}">
       <span class="blk-del" onclick="agDelBlock(event,'${b.id}')">✕</span>
       <div class="blk-time">${fmtTime(b.start)}–${fmtTime(b.start+b.dur)}</div>
       <div class="blk-label">${b.emoji||''} ${b.label}</div>
+      ${b.notes ? `<div class="blk-notes">${b.notes.length>48?b.notes.slice(0,48)+'…':b.notes}</div>` : ''}
       <div class="blk-resize"></div>
     </div>`;
 }
@@ -1705,15 +2090,121 @@ function agId() { return 'b' + Date.now().toString(36) + Math.random().toString(
 
 function agDelBlock(e, id) {
   e.stopPropagation();
+  agPushHistory();
   const st = agendaState[agCurrent];
   st.blocks = st.blocks.filter(b => b.id !== id);
   agSaveState();
   agRender();
 }
 
+function agOpenEdit(e, id) {
+  e.stopPropagation();
+  document.getElementById('ag-edit-popup')?.remove();
+  const st = agendaState[agCurrent];
+  const b = st.blocks.find(x => x.id === id);
+  if(!b) return;
+  const m2t = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const popup = document.createElement('div');
+  popup.id = 'ag-edit-popup';
+  popup.className = 'ag-edit-popup';
+  popup.innerHTML = `
+    <div class="ag-ep-header">
+      <strong>Modifier le bloc</strong>
+      <button class="ag-ep-close" onclick="document.getElementById('ag-edit-popup').remove()">✕</button>
+    </div>
+    <div class="ag-ep-row">
+      <input class="ag-ep-emoji" id="ep-emoji" value="${b.emoji||''}" placeholder="🏖️" maxlength="4">
+      <input class="ag-ep-label" id="ep-label" value="${b.label||''}" placeholder="Libellé">
+    </div>
+    <div class="ag-ep-row" style="gap:6px">
+      <label>Début</label>
+      <input type="time" id="ep-start" value="${m2t(b.start)}" step="900" oninput="agEpSync('start')" style="flex:1">
+      <label>Fin</label>
+      <input type="time" id="ep-end" value="${m2t(b.start+b.dur)}" step="900" oninput="agEpSync('end')" style="flex:1">
+    </div>
+    <div class="ag-ep-row">
+      <label>Durée</label>
+      <input type="number" id="ep-dur" value="${b.dur}" min="15" max="720" step="15" style="width:68px" oninput="agEpSync('dur')"> min
+      <span id="ep-dur-h" style="font-size:.75rem;color:var(--muted);margin-left:6px">${agDurLabel(b.dur)}</span>
+    </div>
+    <div class="ag-ep-row" style="align-items:flex-start">
+      <label style="margin-top:5px">Notes</label>
+      <textarea id="ep-notes" rows="3" placeholder="Adresse, lien, infos…">${b.notes||''}</textarea>
+    </div>
+    <div class="ag-ep-actions">
+      <button class="btn btn-success btn-sm" onclick="agSaveEdit('${id}')">✓ Enregistrer</button>
+      <button class="btn btn-outline btn-sm" onclick="agDuplicateBlock('${id}')" title="Dupliquer ce bloc">📋</button>
+      <button class="btn btn-outline btn-sm" onclick="agDelFromEdit('${id}')" style="color:#ef4444;border-color:#ef444444">🗑</button>
+    </div>`;
+  document.body.appendChild(popup);
+  const px = Math.min(e.clientX + 12, window.innerWidth - 310);
+  const py = Math.min(e.clientY - 10, window.innerHeight - 320);
+  popup.style.left = Math.max(8, px) + 'px';
+  popup.style.top  = Math.max(8, py) + 'px';
+  popup.querySelector('#ep-label').select();
+  setTimeout(() => {
+    function outside(ev) {
+      if(!document.getElementById('ag-edit-popup')?.contains(ev.target)) {
+        document.getElementById('ag-edit-popup')?.remove();
+        document.removeEventListener('pointerdown', outside);
+      }
+    }
+    document.addEventListener('pointerdown', outside);
+  }, 150);
+}
+
+function agDurLabel(dur) {
+  const h = Math.floor(dur/60), m = dur%60;
+  return h === 0 ? `${m} min` : m === 0 ? `${h}h` : `${h}h${String(m).padStart(2,'0')}`;
+}
+
+function agEpSync(changed) {
+  const t2m = s => { const [h,m] = (s||'0:0').split(':').map(Number); return h*60+m; };
+  const m2t = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const sEl = document.getElementById('ep-start');
+  const eEl = document.getElementById('ep-end');
+  const dEl = document.getElementById('ep-dur');
+  const hEl = document.getElementById('ep-dur-h');
+  if(!sEl||!eEl||!dEl) return;
+  let start = t2m(sEl.value), end = t2m(eEl.value), dur = parseInt(dEl.value)||15;
+  if(changed === 'start') { end = start + dur; eEl.value = m2t(Math.min(end, 24*60)); }
+  else if(changed === 'end') { dur = Math.max(15, end - start); dEl.value = dur; }
+  else if(changed === 'dur') { end = start + dur; eEl.value = m2t(Math.min(end, 24*60)); }
+  if(hEl) hEl.textContent = agDurLabel(parseInt(dEl.value)||15);
+}
+
+function agSaveEdit(id) {
+  agPushHistory();
+  const st = agendaState[agCurrent];
+  const b = st.blocks.find(x => x.id === id);
+  if(!b) return;
+  const t2m = s => { const [h,m] = (s||'0:0').split(':').map(Number); return h*60+m; };
+  const label = document.getElementById('ep-label').value.trim();
+  const startStr = document.getElementById('ep-start').value;
+  const endStr = document.getElementById('ep-end').value;
+  if(label) b.label = label;
+  b.emoji = document.getElementById('ep-emoji').value.trim();
+  b.notes = document.getElementById('ep-notes').value.trim();
+  if(startStr) b.start = t2m(startStr);
+  if(endStr) { const newDur = t2m(endStr) - b.start; if(newDur >= 15) b.dur = newDur; }
+  agSaveState();
+  document.getElementById('ag-edit-popup')?.remove();
+  agRender();
+}
+
+function agDelFromEdit(id) {
+  agPushHistory();
+  const st = agendaState[agCurrent];
+  st.blocks = st.blocks.filter(b => b.id !== id);
+  agSaveState();
+  document.getElementById('ag-edit-popup')?.remove();
+  agRender();
+}
+
 function agClear() {
   if(!agCurrent) return;
   if(!confirm('Vider tout le planning de cette destination ?')) return;
+  agPushHistory();
   agendaState[agCurrent].blocks = [];
   agendaState[agCurrent].chillDays = {};
   agSaveState();
@@ -1757,13 +2248,7 @@ function agBindBlocks() {
       if(e.target.classList.contains('blk-resize')) { agStartResize(e, id, el); return; }
       agStartDrag(e, 'move', null, id, el);
     });
-    el.addEventListener('dblclick', e => {
-      e.preventDefault();
-      const st = agendaState[agCurrent];
-      const b = st.blocks.find(x => x.id === id);
-      const nv = prompt('Renommer le bloc :', b.label);
-      if(nv && nv.trim()) { b.label = nv.trim(); agSaveState(); agRender(); }
-    });
+    el.addEventListener('dblclick', e => { e.preventDefault(); agOpenEdit(e, id); });
   });
 }
 
@@ -1825,11 +2310,13 @@ function agOnUp(e) {
   document.querySelectorAll('.ag-daycol.drop-hover').forEach(c => c.classList.remove('drop-hover'));
   if(!agDrag) return;
   if(!agDrag.started) { agDrag = null; return; } // simple clic, rien à faire
+  _agLastDragEnd = Date.now();
   if(agDrag.ghost) agDrag.ghost.remove();
   const st = agendaState[agCurrent];
   const topY = e.clientY - agDrag.off.y; // haut du bloc
   const col = agColUnder(e.clientX, topY + 6);
   if(col) {
+    agPushHistory();
     const day = col.dataset.day;
     const rect = col.getBoundingClientRect();
     let rawMin = st.hstart*60 + (topY - rect.top) / PX_PER_MIN;
@@ -1873,6 +2360,7 @@ function agOnResize(e) {
 function agOnResizeUp() {
   window.removeEventListener('pointermove', agOnResize);
   if(agResize && agResize._dur) {
+    agPushHistory();
     const st = agendaState[agCurrent];
     const b = st.blocks.find(x => x.id === agResize.id);
     b.dur = agResize._dur;
