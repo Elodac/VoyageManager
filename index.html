@@ -30,7 +30,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
   <button class="nav-btn" onclick="showPage('budget')">💶 Budget</button>
   <button class="nav-btn" onclick="showPage('ajouter')">➕ Ajouter</button>
   <div class="nav-spacer"></div>
-  <span class="nav-badge">Crète · 6 juillet 2026</span>
+  <span class="nav-badge" id="nav-badge">Crète · 6 juillet 2026</span>
 </nav>
 
 <main>
@@ -344,7 +344,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 
 <!-- ══ PAGE : BUDGET ══════════════════════════════════ -->
 <section class="page" id="page-budget">
-  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:20px">💶 Comparatif budgets</h1>
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:20px">💶 Budget & Dépenses</h1>
   <div class="card">
     <table class="budget-table" id="budget-table">
       <thead>
@@ -354,18 +354,46 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
           <th>Vol (2 pers.)</th>
           <th>Budget min</th>
           <th>Budget max</th>
-          <th>Rapport €</th>
+          <th>Rapport €/j</th>
         </tr>
       </thead>
       <tbody id="budget-tbody"></tbody>
     </table>
+  </div>
+
+  <!-- TRACKER DE DÉPENSES RÉELLES -->
+  <div class="budget-tracker card" style="margin-top:20px">
+    <h2>💳 Tracker de dépenses réelles</h2>
+    <div class="tracker-dest-bar">
+      <select id="tracker-dest-select" onchange="trackerLoadDest()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:.84rem;outline:none">
+        <option value="">— Sélectionner un voyage —</option>
+      </select>
+      <span id="tracker-budget-label" style="font-size:.82rem;color:var(--muted)"></span>
+    </div>
+    <div id="tracker-content" style="display:none">
+      <div class="expense-form">
+        <select id="exp-cat" style="width:130px">
+          <option value="Transport">✈️ Transport</option>
+          <option value="Hébergement">🏨 Hébergement</option>
+          <option value="Restauration">🍽️ Restauration</option>
+          <option value="Activités">🎯 Activités</option>
+          <option value="Shopping">🛍️ Shopping</option>
+          <option value="Divers">📦 Divers</option>
+        </select>
+        <input type="text" id="exp-label" placeholder="Description…" style="flex:1;min-width:120px">
+        <input type="number" id="exp-amount" placeholder="Montant €" min="0" step="0.5" style="width:110px">
+        <button class="btn btn-success btn-sm" onclick="trackerAddExpense()">+ Ajouter</button>
+      </div>
+      <div class="expense-list" id="expense-list"></div>
+      <div class="budget-summary" id="budget-summary"></div>
+    </div>
   </div>
 </section>
 
 </main>
 
 <!-- ══ MODAL DESTINATION ══════════════════════════════ -->
-<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+<div class="modal-overlay hidden" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="closeModal(event)">
   <div class="modal" id="modal">
     <div class="modal-header">
       <div class="modal-emoji" id="modal-emoji">🏖️</div>
@@ -373,7 +401,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
         <h2 id="modal-title">Destination</h2>
         <div id="modal-subtitle" style="color:var(--muted);font-size:.85rem"></div>
       </div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()" aria-label="Fermer la fiche destination">✕</button>
     </div>
     <div class="modal-tabs">
       <button class="modal-tab active" onclick="showTab('infos')">📋 Infos</button>
@@ -394,8 +422,26 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
   </div>
 </div>
 
+<!-- ONBOARDING -->
+<div class="modal-overlay hidden" id="onboarding-overlay" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+  <div class="modal" style="max-width:500px">
+    <div style="text-align:center;padding:8px 0 20px">
+      <div style="font-size:3rem;margin-bottom:12px">✈️</div>
+      <h2 id="onboarding-title" style="font-size:1.25rem;font-weight:700;margin-bottom:8px">Bienvenue dans VoyageManager</h2>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px">Ton assistant de planification de voyages personnel.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;text-align:left">
+        <div class="onboarding-step"><span style="font-size:1.2rem;flex-shrink:0">🗺️</span><div><strong>Destinations</strong>Parcours les destinations, filtre par statut ou type, ouvre une fiche pour tous les détails.</div></div>
+        <div class="onboarding-step"><span style="font-size:1.2rem;flex-shrink:0">📆</span><div><strong>Agenda</strong>Glisse des blocs depuis la palette, ou clique sur une case vide pour créer un créneau. Double-clic pour modifier.</div></div>
+        <div class="onboarding-step"><span style="font-size:1.2rem;flex-shrink:0">🧳</span><div><strong>Valises</strong>Coche les items au fur et à mesure. Ajoute tes propres catégories et glisse les items entre elles.</div></div>
+        <div class="onboarding-step"><span style="font-size:1.2rem;flex-shrink:0">💾</span><div><strong>Sauvegarde</strong>Tout est sauvegardé localement. Utilise l'Export JSON depuis le Dashboard pour faire une copie de sécurité.</div></div>
+      </div>
+      <button class="btn btn-success" onclick="closeOnboarding()" style="min-width:140px">C'est parti ! 🚀</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- ══ SCRIPTS ════════════════════════════════════════ -->
 <!-- data.js chargé avec cache-busting : les mises à jour de données sont prises en compte sans hard-refresh -->
@@ -403,6 +449,29 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
+// ── UTILITAIRES ────────────────────────────────────────
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function debounce(fn, ms) {
+  let timer;
+  return function(...args) { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, args), ms); };
+}
+
+// Sauvegarde de sécurité localStorage
+function lsSafe(key, val) {
+  try {
+    localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+    return true;
+  } catch(e) {
+    showToast('⚠️ Espace disque plein — sauvegarde impossible');
+    return false;
+  }
+}
+
 // ── STATE ──────────────────────────────────────────────
 let currentPage = 'dashboard';
 let currentFiltre = 'all';
@@ -462,6 +531,8 @@ document.addEventListener('DOMContentLoaded', () => {
   buildValiseSelect();
   buildSearchSelect();
   buildAgendaSelect();
+  trackerBuildSelect();
+  updateNavBadge();
   initCountdown();
   const savedPage = sessionStorage.getItem('vm_page');
   if(savedPage && document.getElementById('page-' + savedPage)) showPage(savedPage);
@@ -547,15 +618,27 @@ function showPage(id) {
 
 // ── COUNTDOWN ──────────────────────────────────────────
 function initCountdown() {
+  // Cherche le prochain voyage confirmé depuis store.js (chargé après)
+  function getNextTripDate() {
+    try {
+      const trips = (window.getTrips ? getTrips() : [])
+        .filter(t => (t.status || t.statut) === 'confirme' && (t.date_depart || t.dateDepart))
+        .sort((a, b) => new Date(a.date_depart || a.dateDepart) - new Date(b.date_depart || b.dateDepart));
+      if (trips.length) return new Date((trips[0].date_depart || trips[0].dateDepart) + 'T04:30:00');
+    } catch(e) {}
+    return new Date('2026-07-06T04:30:00'); // fallback Crète
+  }
+
   function update() {
-    const target = new Date('2026-07-06T04:30:00');
+    const target = getNextTripDate();
     const now = new Date();
     const diff = target - now;
-    if(diff <= 0) { document.getElementById('countdown').innerHTML = '<span style="color:var(--green);font-weight:700">🎉 C\'est parti !</span>'; return; }
-    const days = Math.floor(diff / 86400000);
-    const hours = Math.floor((diff % 86400000) / 3600000);
-    const mins = Math.floor((diff % 3600000) / 60000);
     const el = document.getElementById('countdown');
+    if(!el) return;
+    if(diff <= 0) { el.innerHTML = '<span style="color:var(--green);font-weight:700">🎉 C\'est parti !</span>'; return; }
+    const days  = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins  = Math.floor((diff % 3600000) / 60000);
     el.innerHTML = `
       <div class="countdown-unit"><div class="countdown-val">${days}</div><div class="countdown-lbl">jours</div></div>
       <div class="countdown-unit"><div class="countdown-val">${hours}</div><div class="countdown-lbl">heures</div></div>
@@ -760,11 +843,13 @@ function setFiltre(f) {
   renderDestGrid();
 }
 
-function filterDests() {
-  currentSearchQuery = document.querySelector('.search-input').value;
+const _filterDestsBounced = debounce(function() {
+  currentSearchQuery = document.querySelector('.search-input')?.value || '';
   sessionStorage.setItem('vm_search', currentSearchQuery);
   renderDestGrid();
-}
+}, 280);
+
+function filterDests() { _filterDestsBounced(); }
 
 function restoreFilters() {
   const f = sessionStorage.getItem('vm_filtre');
@@ -781,12 +866,12 @@ function openDest(id) {
   const s = STATUT_CONFIG[d.statut];
   document.getElementById('modal-emoji').textContent = d.emoji;
   document.getElementById('modal-title').textContent = d.nom;
-  document.getElementById('modal-subtitle').innerHTML = `<span class="badge badge-${s.cls}">${s.label}</span> &nbsp; ${d.pays} &nbsp; · &nbsp; ${d.dates||'Projet futur'}`;
+  document.getElementById('modal-subtitle').innerHTML = `<span class="badge badge-${escHtml(s.cls)}">${escHtml(s.label)}</span> &nbsp; ${escHtml(d.pays)} &nbsp; · &nbsp; ${escHtml(d.dates||'Projet futur')}`;
 
   // Tab Infos
   document.getElementById('tab-infos').innerHTML = `
     <div class="info-box ${d.statut==='confirme'?'success':''}" style="margin-bottom:16px">
-      <strong>${d.description}</strong>
+      <strong>${escHtml(d.description)}</strong>
     </div>
     <div class="grid grid-2" style="gap:12px;margin-bottom:16px">
       <div class="card card-sm">
@@ -929,7 +1014,7 @@ function openDest(id) {
   // Tab Recherche
   buildSearchTabForDest(d);
 
-  document.getElementById('modal-overlay').classList.remove('hidden');
+  _openModal();
   showTab('infos');
 }
 
@@ -981,15 +1066,41 @@ function buildSearchTabForDest(d) {
 function closeModal(e) {
   if(e && e.target !== document.getElementById('modal-overlay')) return;
   document.getElementById('modal-overlay').classList.add('hidden');
+  document.removeEventListener('keydown', _modalFocusTrap);
+  if(_modalPrevFocus) { _modalPrevFocus.focus(); _modalPrevFocus = null; }
+}
+
+let _modalPrevFocus = null;
+function _modalFocusTrap(e) {
+  if(e.key !== 'Tab') return;
+  const modal = document.getElementById('modal');
+  if(!modal) return;
+  const focusable = Array.from(modal.querySelectorAll('button,a,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'))
+    .filter(el => !el.disabled && el.offsetParent !== null);
+  if(!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if(e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
+function _openModal() {
+  _modalPrevFocus = document.activeElement;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  setTimeout(() => {
+    const first = document.getElementById('modal')?.querySelector('button,a,input');
+    if(first) first.focus();
+    document.addEventListener('keydown', _modalFocusTrap);
+  }, 80);
 }
 
 function showTab(name) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.modal-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+  const content = document.getElementById('tab-'+name);
+  if(content) content.classList.add('active');
   const tabs = document.querySelectorAll('.modal-tab');
   const map = { infos:0, programme:1, pois:2, routard:3, gastronomie:4, 'recherche-dest':5 };
-  if(map[name] !== undefined) tabs[map[name]]?.classList.add('active');
+  if(map[name] !== undefined) { tabs[map[name]]?.classList.add('active'); tabs[map[name]]?.setAttribute('aria-selected','true'); }
 }
 
 // ── MAP ────────────────────────────────────────────────
@@ -1166,8 +1277,8 @@ function loadValise() {
   if(!id) { document.getElementById('valise-body').innerHTML = ''; return; }
   const d = DESTINATIONS.find(x => x.id === id);
   if(!d) return;
-  const tmpl = VALISE_TEMPLATES[d.valise_type];
-  if(!tmpl) { document.getElementById('valise-body').innerHTML = '<p style="color:var(--muted)">Template non trouvé.</p>'; return; }
+  const tmpl = VALISE_TEMPLATES[d.valise_type] || VALISE_TEMPLATES['plage'] || Object.values(VALISE_TEMPLATES)[0];
+  if(!tmpl) { document.getElementById('valise-body').innerHTML = '<p style="color:var(--muted)">Aucun template disponible.</p>'; return; }
 
   const infoEl = document.getElementById('valise-info');
   infoEl.style.display = 'block';
@@ -1492,16 +1603,21 @@ function buildBudget() {
   tbody.innerHTML = DESTINATIONS.map(d => {
     const s = STATUT_CONFIG[d.statut];
     const pct = Math.round(d.budget_min / maxB * 100);
+    let perDay = '—';
+    if (d.date_depart && d.date_retour) {
+      const nb = Math.round((new Date(d.date_retour) - new Date(d.date_depart)) / 86400000);
+      if (nb > 0) perDay = Math.round(d.budget_max / nb) + '€/j';
+    }
     return `
-      <tr onclick="openDest('${d.id}')" style="cursor:pointer">
-        <td><strong>${d.emoji} ${d.nom}</strong><br><span style="font-size:.75rem;color:var(--muted)">${d.pays}</span></td>
-        <td><span class="badge badge-${s.cls}">${s.label}</span></td>
-        <td style="font-size:.82rem">${d.vol_prix || '—'}</td>
+      <tr onclick="openDest('${escHtml(d.id)}')" style="cursor:pointer">
+        <td><strong>${escHtml(d.emoji + ' ' + d.nom)}</strong><br><span style="font-size:.75rem;color:var(--muted)">${escHtml(d.pays)}</span></td>
+        <td><span class="badge badge-${escHtml(s.cls)}">${escHtml(s.label)}</span></td>
+        <td style="font-size:.82rem">${escHtml(d.vol_prix || '—')}</td>
         <td style="font-size:.85rem;color:var(--green);font-weight:600">${d.budget_min}€</td>
         <td style="font-size:.85rem;color:var(--yellow)">${d.budget_max}€</td>
-        <td style="min-width:80px">
+        <td style="min-width:100px">
+          <div style="font-size:.85rem;font-weight:600;color:var(--accent);margin-bottom:3px">${perDay}</div>
           <div class="budget-bar"><div class="budget-bar-inner" style="width:${pct}%;background:${pct<50?'var(--green)':pct<75?'var(--yellow)':'var(--red)'}"></div></div>
-          <span style="font-size:.7rem;color:var(--muted)">${pct}% du max</span>
         </td>
       </tr>
     `;
@@ -2229,6 +2345,7 @@ function agExport() {
 
 // ── MOTEUR DRAG & DROP (pointer events) ─────────────────
 let agDrag = null; // { mode, payload, ghost, started, sx, sy, off, blockId }
+let _agMoveTs = 0; // throttle timestamp
 
 function agBindPalette() {
   document.querySelectorAll('.pal-block').forEach(el => {
@@ -2291,6 +2408,9 @@ function agOnMove(e) {
     agDrag.started = true;
     agMakeGhost();
   }
+  const now = Date.now();
+  if(now - _agMoveTs < 32) return; // ~30fps throttle
+  _agMoveTs = now;
   agDrag.ghost.style.left = (e.clientX - agDrag.off.x) + 'px';
   agDrag.ghost.style.top  = (e.clientY - agDrag.off.y) + 'px';
   // surbrillance colonne cible
@@ -2388,22 +2508,140 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ── ONBOARDING ─────────────────────────────────────────
+function updateNavBadge() {
+  const el = document.getElementById('nav-badge');
+  if (!el) return;
+  try {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const next = (window.DESTINATIONS || [])
+      .filter(d => d.statut === 'confirme' && d.date_depart)
+      .map(d => ({ d, dt: new Date(d.date_depart + 'T04:00:00') }))
+      .filter(x => x.dt >= today)
+      .sort((a, b) => a.dt - b.dt)[0];
+    if (next) {
+      const nom = next.d.nom.split('—')[0].trim().split(' ')[0];
+      const dt = next.dt;
+      const opts = { day: 'numeric', month: 'long', year: 'numeric' };
+      el.textContent = nom + ' · ' + dt.toLocaleDateString('fr-FR', opts);
+    }
+  } catch(e) {}
+}
+
+function closeOnboarding() {
+  document.getElementById('onboarding-overlay').classList.add('hidden');
+  localStorage.setItem('vm_onboarded', '1');
+}
+
+// ── BUDGET TRACKER ──────────────────────────────────────
+const TRACKER_KEY = 'vm_expenses_v1';
+let trackerState = {}; // { destId: [{ id, cat, label, amount, date }] }
+let trackerDest = null;
+
+function trackerLoad() {
+  try { trackerState = JSON.parse(localStorage.getItem(TRACKER_KEY) || '{}'); } catch(e) { trackerState = {}; }
+}
+
+function trackerSave() { lsSafe(TRACKER_KEY, trackerState); }
+
+function trackerBuildSelect() {
+  const sel = document.getElementById('tracker-dest-select');
+  if(!sel) return;
+  while(sel.options.length > 1) sel.remove(1);
+  [...(window.DESTINATIONS||[])].sort((a,b) => a.nom.localeCompare(b.nom,'fr')).forEach(d => {
+    const o = document.createElement('option'); o.value = d.id; o.textContent = `${d.emoji} ${d.nom}`; sel.appendChild(o);
+  });
+}
+
+function trackerLoadDest() {
+  const id = document.getElementById('tracker-dest-select').value;
+  trackerDest = id || null;
+  const content = document.getElementById('tracker-content');
+  const label = document.getElementById('tracker-budget-label');
+  if(!id) { content.style.display = 'none'; label.textContent = ''; return; }
+  const d = (window.DESTINATIONS||[]).find(x => x.id === id);
+  if(d && d.budget_min) label.textContent = `Budget estimé : ${d.budget_min}€ – ${d.budget_max}€`;
+  else label.textContent = '';
+  content.style.display = 'block';
+  trackerRender();
+}
+
+function trackerRender() {
+  if(!trackerDest) return;
+  const expenses = trackerState[trackerDest] || [];
+  const list = document.getElementById('expense-list');
+  const summary = document.getElementById('budget-summary');
+  const CATS = { Transport:'✈️', Hébergement:'🏨', Restauration:'🍽️', Activités:'🎯', Shopping:'🛍️', Divers:'📦' };
+
+  list.innerHTML = expenses.length ? expenses.map(exp => `
+    <div class="expense-item">
+      <span class="exp-cat">${CATS[exp.cat]||'📦'} ${escHtml(exp.cat)}</span>
+      <span class="exp-label">${escHtml(exp.label)}</span>
+      <span class="exp-amount">${exp.amount.toFixed(2)} €</span>
+      <button class="exp-del" onclick="trackerDeleteExpense('${escHtml(exp.id)}')" aria-label="Supprimer">✕</button>
+    </div>`).join('') : '<p style="color:var(--muted);font-size:.83rem;padding:8px 0">Aucune dépense enregistrée.</p>';
+
+  const total = expenses.reduce((s, e) => s + e.amount, 0);
+  const byCat = {};
+  expenses.forEach(e => { byCat[e.cat] = (byCat[e.cat]||0) + e.amount; });
+  const d = (window.DESTINATIONS||[]).find(x => x.id === trackerDest);
+  const budgetMax = d?.budget_max || null;
+  const overClass = budgetMax && total > budgetMax ? 'budget-over' : 'budget-ok';
+
+  summary.innerHTML = `
+    <div class="budget-summary-card"><div class="bsc-val ${overClass}">${total.toFixed(0)} €</div><div class="bsc-label">Total dépensé</div></div>
+    ${budgetMax ? `<div class="budget-summary-card"><div class="bsc-val ${overClass}">${(budgetMax - total).toFixed(0)} €</div><div class="bsc-label">${total > budgetMax ? 'Dépassement' : 'Restant'}</div></div>` : ''}
+    ${Object.entries(byCat).map(([cat, amt]) => `<div class="budget-summary-card"><div class="bsc-val" style="font-size:1rem">${amt.toFixed(0)} €</div><div class="bsc-label">${cat}</div></div>`).join('')}
+  `;
+}
+
+function trackerAddExpense() {
+  if(!trackerDest) return;
+  const cat = document.getElementById('exp-cat').value;
+  const label = document.getElementById('exp-label').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  if(!label || isNaN(amount) || amount <= 0) { showToast('⚠️ Remplis tous les champs'); return; }
+  if(!trackerState[trackerDest]) trackerState[trackerDest] = [];
+  trackerState[trackerDest].push({ id: Date.now().toString(36), cat, label, amount, date: new Date().toISOString().slice(0,10) });
+  trackerSave();
+  document.getElementById('exp-label').value = '';
+  document.getElementById('exp-amount').value = '';
+  trackerRender();
+  showToast('✓ Dépense ajoutée');
+}
+
+function trackerDeleteExpense(id) {
+  if(!trackerDest) return;
+  trackerState[trackerDest] = (trackerState[trackerDest]||[]).filter(e => e.id !== id);
+  trackerSave();
+  trackerRender();
+}
+
 // Export / Import JSON
 document.addEventListener('DOMContentLoaded', () => {
+  // Onboarding première visite
+  if(!localStorage.getItem('vm_onboarded')) {
+    setTimeout(() => document.getElementById('onboarding-overlay')?.classList.remove('hidden'), 600);
+  }
+
+  // Budget tracker init
+  trackerLoad();
+
   const btnExport = document.getElementById('btn-export-json');
   const inputImport = document.getElementById('input-import-json');
   if (btnExport) {
     btnExport.addEventListener('click', () => {
-      const KEYS = ['vm_store_v1', 'voyagemanager_valises', 'voyagemanager_agenda'];
-      const snapshot = {};
-      KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) snapshot[k] = JSON.parse(v); });
+      const KEYS = ['vm_store_v1', 'voyagemanager_valises', 'voyagemanager_agenda', TRACKER_KEY];
+      const snapshot = { _vmVersion: 3, _exported: new Date().toISOString() };
+      KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) try { snapshot[k] = JSON.parse(v); } catch(e) {} });
       const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       const date = new Date().toISOString().slice(0, 10);
       a.download = `voyagemanager-backup-${date}.json`;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       showToast('📤 Données exportées !');
     });
   }
@@ -2416,9 +2654,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const data = JSON.parse(ev.target.result);
           if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Format invalide');
-          if (!confirm('Importer ces données ? Les données actuelles seront écrasées.')) return;
-          Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
-          showToast('📥 Données importées ! Rechargement…');
+          const ver = data._vmVersion || 1;
+          if (!confirm(`Importer la sauvegarde du ${data._exported ? data._exported.slice(0,10) : '?'} (version ${ver}) ? Les données actuelles seront écrasées.`)) return;
+          const VALID_KEYS = new Set(['vm_store_v1','voyagemanager_valises','voyagemanager_agenda', TRACKER_KEY]);
+          let imported = 0;
+          Object.entries(data).forEach(([k, v]) => {
+            if(VALID_KEYS.has(k)) { localStorage.setItem(k, JSON.stringify(v)); imported++; }
+          });
+          showToast(`📥 ${imported} clé(s) importée(s) — rechargement…`);
           setTimeout(() => location.reload(), 1200);
         } catch (err) {
           showToast('⚠️ Fichier invalide : ' + err.message);

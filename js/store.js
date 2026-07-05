@@ -50,7 +50,7 @@ function addUserDestination(dest) {
 function addUserActivity(act) { storeState.userActivities.push(act); _storePersist(); _storeEmit(); return act; }
 
 function _storeRefreshLegacy() {
-  ['buildDestGrid', 'buildBudget', 'buildValiseSelect', 'buildSearchSelect', 'buildAgendaSelect']
+  ['buildDestGrid', 'buildBudget', 'buildValiseSelect', 'buildSearchSelect', 'buildAgendaSelect', 'trackerBuildSelect']
     .forEach(fn => { try { window[fn] && window[fn](); } catch (e) { /* ignore */ } });
 }
 
@@ -74,7 +74,16 @@ function loadStore() {
       _storeMergeUserDest();
       _storeLoaded = true;
       return storeState;
-    } catch (e) { console.warn('Store illisible, reseed', e); }
+    } catch (e) {
+      console.warn('Store illisible, backup et reseed', e);
+      try {
+        const ts = new Date().toISOString().slice(0, 10);
+        localStorage.setItem(STORAGE_KEY + '_backup_' + ts, raw);
+      } catch(_) {}
+      setTimeout(() => {
+        if (window.showToast) showToast('⚠️ Sauvegarde corrompue — données réinitialisées (backup conservé)');
+      }, 1200);
+    }
   }
   _storeSeed();
   _storePersist();

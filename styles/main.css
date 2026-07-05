@@ -510,3 +510,33 @@ body:has(#page-transport.active) main{max-width:1600px}
   .budget-table th,.budget-table td{padding:7px 8px}
 }
 
+/* ── ACCESSIBILITÉ : MOUVEMENT RÉDUIT ───────────────────── */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* ── ONBOARDING ─────────────────────────────────────────── */
+.onboarding-step{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:.83rem;line-height:1.55;display:flex;gap:10px;align-items:flex-start}
+.onboarding-step strong{font-size:.84rem;display:block;margin-bottom:2px}
+
+/* ── BUDGET TRACKER ──────────────────────────────────────── */
+.budget-tracker{margin-top:24px}
+.budget-tracker h2{font-size:1rem;font-weight:600;margin-bottom:14px}
+.tracker-dest-bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.expense-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.expense-form input,.expense-form select{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:.83rem;outline:none}
+.expense-form input:focus,.expense-form select:focus{border-color:var(--accent)}
+.expense-list{display:flex;flex-direction:column;gap:6px}
+.expense-item{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.82rem}
+.expense-item .exp-cat{color:var(--muted);flex-shrink:0;width:90px;overflow:hidden;text-overflow:ellipsis}
+.expense-item .exp-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expense-item .exp-amount{font-weight:700;color:var(--yellow);flex-shrink:0}
+.expense-item .exp-del{color:var(--muted);cursor:pointer;font-size:.8rem;padding:2px 6px;border-radius:4px;background:transparent;border:none}
+.expense-item .exp-del:hover{color:#ef4444;background:rgba(239,68,68,.1)}
+.budget-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.budget-summary-card{background:var(--bg3);border-radius:10px;padding:12px 14px;text-align:center}
+.budget-summary-card .bsc-val{font-size:1.25rem;font-weight:700;margin-bottom:3px}
+.budget-summary-card .bsc-label{font-size:.7rem;color:var(--muted)}
+.budget-over{color:#ef4444!important}
+.budget-ok{color:var(--green)!important}
+
