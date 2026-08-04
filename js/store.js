@@ -50,7 +50,7 @@ function addUserDestination(dest) {
 function addUserActivity(act) { storeState.userActivities.push(act); _storePersist(); _storeEmit(); return act; }
 
 function _storeRefreshLegacy() {
-  ['buildDestGrid', 'buildBudget', 'buildValiseSelect', 'buildSearchSelect', 'buildAgendaSelect', 'trackerBuildSelect']
+  ['buildDestGrid', 'buildBudget', 'buildValiseSelect', 'buildSearchSelect', 'buildAgendaSelect', 'trackerBuildSelect', 'buildPinned']
     .forEach(fn => { try { window[fn] && window[fn](); } catch (e) { /* ignore */ } });
 }
 

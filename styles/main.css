@@ -540,3 +540,100 @@ body:has(#page-transport.active) main{max-width:1600px}
 .budget-over{color:#ef4444!important}
 .budget-ok{color:var(--green)!important}
 
+/* ── ÉPINGLÉS (page d'accueil) — drag & drop ─────────────── */
+.hero-plan{background:linear-gradient(135deg,#0f2d44 0%,#231b3d 100%);border-color:#6366f155}
+.hero-plan::before{background:radial-gradient(circle,#6366f11f 0%,transparent 70%)}
+.hero-confirmed[draggable=true]{cursor:grab}
+.hero-confirmed[draggable=true]:active{cursor:grabbing}
+.pin-grip{position:absolute;top:10px;left:12px;color:#ffffff55;font-size:1rem;letter-spacing:-2px;cursor:grab;user-select:none;z-index:3}
+.pin-remove{position:absolute;top:8px;right:8px;background:#ffffff14;border:1px solid #ffffff22;border-radius:99px;width:26px;height:26px;font-size:.72rem;color:#fff;display:flex;align-items:center;justify-content:center;z-index:3;padding:0;line-height:1;transition:all .15s;cursor:pointer}
+.pin-remove:hover{background:var(--red);border-color:#ef444488}
+.pin-dragging{opacity:.4}
+.pin-dragover{outline:2px dashed var(--accent);outline-offset:3px}
+.pin-empty{background:var(--bg2);border:1px dashed var(--border);border-radius:var(--card-radius);padding:22px;text-align:center;color:var(--muted);font-size:.88rem;margin-bottom:16px}
+.pin-add-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 24px}
+.pin-add-icon{font-size:1rem}
+.pin-add-select{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--text);font-size:.86rem;outline:none;cursor:pointer;min-width:280px;max-width:100%}
+.pin-add-select:focus{border-color:var(--accent)}
+.pin-hint{font-size:.74rem;color:var(--muted)}
+
+/* ── BOUTONS D'ACTION EN-TÊTE DE FICHE (épingler / archiver) ─ */
+.modal-act{background:var(--bg3);border:1px solid var(--border);border-radius:8px;width:34px;height:34px;font-size:.95rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;padding:0;line-height:1}
+.modal-act:hover{border-color:var(--accent);background:var(--bg2)}
+.modal-act.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── DASHBOARD : épinglés + sélecteur latéral ────────────── */
+.dash-top{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:stretch;margin-bottom:8px}
+#pinned-mount{display:flex;flex-direction:column;min-height:160px;border-radius:var(--card-radius);transition:background .15s}
+#pinned-mount.pin-mount-over{outline:2px dashed var(--accent);outline-offset:6px;background:#3b82f60d}
+.pin-dropzone{flex:1 1 auto;min-height:90px;border:2px dashed var(--border);border-radius:var(--card-radius);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:.86rem;margin-top:8px;padding:16px;transition:all .15s}
+.pin-dropzone-empty{min-height:180px;font-size:.95rem}
+#pinned-mount.pin-mount-over .pin-dropzone{border-color:var(--accent);color:var(--accent);background:#3b82f60d}
+.pin-dropzone strong{color:var(--text);font-weight:600}
+
+/* Suivi d'avancement sur la carte épinglée */
+.hero-prog{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.hero-prog-status{font-size:.74rem;font-weight:600;padding:3px 10px;border-radius:99px;background:color-mix(in srgb, var(--c) 22%, transparent);color:#fff;border:1px solid var(--c)}
+.hero-prog-bars{display:flex;align-items:center;gap:8px;flex:1;min-width:160px}
+.hero-prog .trip-prog{flex:1;background:#ffffff22}
+.hero-prog .trip-prog-pct{color:#fff;font-size:.78rem;font-weight:700}
+
+/* Panneau latéral (volets déroulants) */
+.pin-selector{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-radius);padding:14px;position:sticky;top:14px}
+.pin-selector-head{font-size:.92rem;font-weight:700;margin-bottom:2px}
+.pin-selector-sub{font-size:.72rem;color:var(--muted);margin-bottom:12px;line-height:1.4}
+.pin-group{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--bg3)}
+.pin-group>summary{list-style:none;cursor:pointer;padding:9px 12px;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:6px;user-select:none}
+.pin-group>summary::-webkit-details-marker{display:none}
+.pin-group>summary::before{content:'▸';color:var(--muted);font-size:.7rem;transition:transform .15s}
+.pin-group[open]>summary::before{transform:rotate(90deg)}
+.pin-group-count{margin-left:auto;background:var(--bg2);border-radius:99px;padding:1px 8px;font-size:.68rem;color:var(--muted);font-weight:600}
+.pin-group-body{padding:4px 6px 8px;display:flex;flex-direction:column;gap:3px;max-height:280px;overflow-y:auto}
+.pin-sel-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:.8rem;cursor:grab;transition:background .12s;border:1px solid transparent}
+.pin-sel-item:hover{background:var(--bg2);border-color:var(--border)}
+.pin-sel-item:active{cursor:grabbing}
+.pin-sel-emoji{font-size:1rem;flex-shrink:0}
+.pin-sel-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pin-sel-act{color:var(--muted);font-weight:700;flex-shrink:0}
+.pin-sel-item.is-pinned{opacity:.55}
+.pin-sel-item.is-pinned .pin-sel-act{color:var(--green)}
+
+/* ── BOUTONS D'ACTION EN-TÊTE DE FICHE (épingler / archiver) ─ */
+.modal-act{background:var(--bg3);border:1px solid var(--border);border-radius:8px;width:34px;height:34px;font-size:.95rem;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;padding:0;line-height:1}
+.modal-act:hover{border-color:var(--accent);background:var(--bg2)}
+.modal-act.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── MODAL SUIVI VOYAGE : édition inline + footer ────────── */
+.el-value{font-size:.8rem;color:var(--muted);margin-top:3px;cursor:text;border-bottom:1px dashed transparent;display:inline-block;max-width:100%}
+.el-value:hover{border-bottom-color:var(--border);color:var(--text)}
+.el-value em{opacity:.7}
+.act-item .act-name{cursor:text}
+.act-del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.72rem;padding:2px 6px;border-radius:4px;margin-left:6px}
+.act-del:hover{color:#ef4444;background:rgba(239,68,68,.1)}
+.trip-modal-footer{position:sticky;bottom:0;background:var(--bg2);margin:18px -18px -18px;padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap}
+
+/* ── CHANGER LA CATÉGORIE D'UNE DESTINATION ──────────────── */
+.cat-select-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:16px}
+.cat-select-row label{font-size:.8rem;color:var(--muted);font-weight:600}
+.cat-select{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:.84rem;outline:none;cursor:pointer}
+.cat-select:focus{border-color:var(--accent)}
+
+/* ── TRI DES DESTINATIONS ────────────────────────────────── */
+.sort-select{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:.76rem;outline:none;cursor:pointer}
+.sort-select:focus{border-color:var(--accent)}
+
+/* ── CARTES ARCHIVES ─────────────────────────────────────── */
+.archive-card{opacity:.92}
+.archive-card:hover{opacity:1}
+
+@media(max-width:900px){
+  .dash-top{grid-template-columns:1fr}
+  .pin-selector{position:static;order:-1}
+  .pin-group-body{max-height:220px}
+}
+@media(max-width:640px){
+  .modal-act{width:30px;height:30px;font-size:.85rem}
+  .pin-add-select{min-width:unset;width:100%}
+  .pin-grip{display:none}
+}
+

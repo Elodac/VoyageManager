@@ -28,6 +28,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
   <button class="nav-btn" onclick="showPage('recherche')">🔍 Recherche</button>
   <button class="nav-btn" onclick="showPage('valises')">🧳 Valises</button>
   <button class="nav-btn" onclick="showPage('budget')">💶 Budget</button>
+  <button class="nav-btn" onclick="showPage('archives')">🗄️ Archives</button>
   <button class="nav-btn" onclick="showPage('ajouter')">➕ Ajouter</button>
   <div class="nav-spacer"></div>
   <span class="nav-badge" id="nav-badge">Crète · 6 juillet 2026</span>
@@ -38,26 +39,10 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 <!-- ══ PAGE : DASHBOARD ═══════════════════════════════ -->
 <section class="page active" id="page-dashboard">
 
-  <!-- Hero confirmé -->
-  <div class="hero-confirmed" id="hero-crete">
-    <div class="hero-emoji">🏖️</div>
-    <div class="hero-content">
-      <h1>Crète — Héraklion ✅</h1>
-      <div class="hero-sub">TUI Suneo Chrissi Amoudia ★★★★ — All-inclusive · 1 950€</div>
-      <div class="countdown" id="countdown"></div>
-      <div class="hero-meta">
-        <span class="hero-pill">✈️ CDG 07:50 → HER · 6 juillet 2026</span>
-        <span class="hero-pill">🏨 5 nuits / 6 jours</span>
-        <span class="hero-pill">🍹 All-inclusive</span>
-        <span class="hero-pill">💳 1 950€ payé (850€ ANCV + 1 100€ CB)</span>
-        <span class="hero-pill">🎯 Budget excursions restant : ~420€</span>
-      </div>
-    </div>
-    <div class="hero-actions">
-      <button class="btn btn-success" onclick="openDest('heraklion')">📋 Voir la fiche</button>
-      <button class="btn btn-outline" onclick="showPage('valises')">🧳 Préparer valises</button>
-      <button class="btn btn-outline" onclick="showPage('carte');setTimeout(()=>focusMap('heraklion'),300)">📍 Sur la carte</button>
-    </div>
+  <!-- Voyages épinglés (drag & drop) + sélecteur latéral -->
+  <div class="dash-top">
+    <div id="pinned-mount"></div>
+    <aside class="pin-selector" id="pin-selector"></aside>
   </div>
 
   <!-- Stats globales -->
@@ -115,6 +100,19 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 
 </section>
 
+<!-- ══ PAGE : ARCHIVES ═══════════════════════════════ -->
+<section class="page" id="page-archives">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px">
+    <h1 style="font-size:1.4rem;font-weight:700">🗄️ Voyages archivés</h1>
+    <span style="color:var(--muted);font-size:.85rem" id="archives-count"></span>
+  </div>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px;max-width:680px">
+    Retrouve ici tes voyages passés avec toutes leurs informations. Ouvre une fiche pour relire les bons plans
+    et enrichir la destination pour les prochains voyageurs. Tu peux réactiver un voyage à tout moment.
+  </p>
+  <div id="archives-mount"></div>
+</section>
+
 <!-- ══ PAGE : DESTINATIONS ═══════════════════════════ -->
 <section class="page" id="page-destinations">
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
@@ -162,8 +160,19 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     <button class="filtre-btn" data-filtre="projet_longterme" onclick="setFiltre('projet_longterme')">🌍 Long courrier</button>
     <button class="filtre-btn" data-filtre="plage" onclick="setFiltre('plage')">🏖️ Plage</button>
     <button class="filtre-btn" data-filtre="ville" onclick="setFiltre('ville')">🏙️ Ville</button>
+    <button class="filtre-btn" data-filtre="culture" onclick="setFiltre('culture')">🏛️ Culture</button>
     <button class="filtre-btn" data-filtre="nature" onclick="setFiltre('nature')">🌿 Nature</button>
-    <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+    <button class="filtre-btn" data-filtre="randonnee" onclick="setFiltre('randonnee')">🥾 Rando</button>
+    <span style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:.72rem;color:var(--muted)">Trier :</label>
+      <select class="sort-select" id="sort-select" onchange="setSort(this.value)" aria-label="Trier les destinations">
+        <option value="default">Par défaut</option>
+        <option value="nom">Nom A → Z</option>
+        <option value="nom_desc">Nom Z → A</option>
+        <option value="budget_asc">Budget croissant</option>
+        <option value="budget_desc">Budget décroissant</option>
+        <option value="statut">Avancement</option>
+      </select>
       <span style="font-size:.72rem;color:var(--muted)">Vue :</span>
       <button class="filtre-btn active" id="view-grid-btn" onclick="setViewMode('grid')" title="Grille">⊞ Grille</button>
       <button class="filtre-btn" id="view-continent-btn" onclick="setViewMode('continent')" title="Grouper par continent">🌍 Par continent</button>
@@ -401,6 +410,8 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
         <h2 id="modal-title">Destination</h2>
         <div id="modal-subtitle" style="color:var(--muted);font-size:.85rem"></div>
       </div>
+      <button class="modal-act" id="modal-pin-btn" onclick="togglePinCurrent()" title="Épingler à l'accueil" aria-label="Épingler à l'accueil">📌</button>
+      <button class="modal-act" id="modal-archive-btn" onclick="toggleArchiveCurrent()" title="Archiver ce voyage" aria-label="Archiver ce voyage">🗄️</button>
       <button class="modal-close" onclick="closeModal()" aria-label="Fermer la fiche destination">✕</button>
     </div>
     <div class="modal-tabs">
@@ -476,6 +487,7 @@ function lsSafe(key, val) {
 let currentPage = 'dashboard';
 let currentFiltre = 'all';
 let currentSearchQuery = '';
+let currentSort = 'default';
 let currentDest = null;
 let viewMode = 'grid'; // 'grid' | 'continent'
 let map = null;
@@ -489,6 +501,7 @@ const CONTINENT_MAP = {
   'Espagne':'Europe','Pays-Bas':'Europe','Allemagne':'Europe','République Tchèque':'Europe',
   'Albanie':'Europe','Suède':'Europe','Norvège':'Europe','Croatie':'Europe',
   'Irlande':'Europe','Écosse':'Europe','Autriche':'Europe',
+  'Andorre':'Europe','Monténégro':'Europe',
   'France (DOM)':'Europe (DOM-TOM)',
   'France (COM)':'Océanie',
   'États-Unis':'Amériques','Canada':'Amériques','Bahamas':'Amériques',
@@ -524,7 +537,12 @@ const CURRENCIES = {
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
   agLoadState();
+  if (window.loadStore) { try { loadStore(); } catch(e) {} } // trips dispo avant le rendu des épinglés
+  applyStatutOverrides(); // catégories personnalisées par l'utilisateur
   restoreFilters();
+  buildPinned();
+  // Met à jour le suivi d'avancement des cartes épinglées quand un voyage change
+  if (window.subscribe) { try { subscribe(() => buildPinned()); } catch(e) {} }
   buildDashboard();
   buildDestGrid();
   buildBudget();
@@ -614,27 +632,16 @@ function showPage(id) {
     if(!map) setTimeout(initMap, 120);
     else setTimeout(() => map.invalidateSize(), 80);
   }
+  if(id === 'archives') buildArchives();
 }
 
 // ── COUNTDOWN ──────────────────────────────────────────
-function initCountdown() {
-  // Cherche le prochain voyage confirmé depuis store.js (chargé après)
-  function getNextTripDate() {
-    try {
-      const trips = (window.getTrips ? getTrips() : [])
-        .filter(t => (t.status || t.statut) === 'confirme' && (t.date_depart || t.dateDepart))
-        .sort((a, b) => new Date(a.date_depart || a.dateDepart) - new Date(b.date_depart || b.dateDepart));
-      if (trips.length) return new Date((trips[0].date_depart || trips[0].dateDepart) + 'T04:30:00');
-    } catch(e) {}
-    return new Date('2026-07-06T04:30:00'); // fallback Crète
-  }
-
-  function update() {
-    const target = getNextTripDate();
-    const now = new Date();
+// Met à jour tous les compteurs .countdown[data-date] (un par voyage épinglé daté).
+function refreshCountdowns() {
+  const now = new Date();
+  document.querySelectorAll('.countdown[data-date]').forEach(el => {
+    const target = new Date(el.dataset.date + 'T04:30:00');
     const diff = target - now;
-    const el = document.getElementById('countdown');
-    if(!el) return;
     if(diff <= 0) { el.innerHTML = '<span style="color:var(--green);font-weight:700">🎉 C\'est parti !</span>'; return; }
     const days  = Math.floor(diff / 86400000);
     const hours = Math.floor((diff % 86400000) / 3600000);
@@ -644,9 +651,357 @@ function initCountdown() {
       <div class="countdown-unit"><div class="countdown-val">${hours}</div><div class="countdown-lbl">heures</div></div>
       <div class="countdown-unit"><div class="countdown-val">${mins}</div><div class="countdown-lbl">minutes</div></div>
     `;
+  });
+}
+function initCountdown() {
+  refreshCountdowns();
+  setInterval(refreshCountdowns, 60000);
+}
+
+// ════════════════════════════════════════════════════════
+//  ÉPINGLÉS (page d'accueil) — pin / unpin / réordonner (drag & drop)
+// ════════════════════════════════════════════════════════
+const PINNED_KEY = 'vm_pinned';
+const ARCHIVED_KEY = 'vm_archived';
+
+function getArchivedIds() {
+  try { const a = JSON.parse(localStorage.getItem(ARCHIVED_KEY)); return Array.isArray(a) ? a : []; }
+  catch(e) { return []; }
+}
+function setArchivedIds(a) { lsSafe(ARCHIVED_KEY, a); }
+
+function getPinnedIds() {
+  let ids;
+  try { ids = JSON.parse(localStorage.getItem(PINNED_KEY)); } catch(e) {}
+  if (!Array.isArray(ids)) ids = ['heraklion']; // défaut : la Crète confirmée
+  const archived = getArchivedIds();
+  return ids.filter(id => (window.DESTINATIONS||[]).some(d => d.id === id) && !archived.includes(id));
+}
+function setPinnedIds(ids) { lsSafe(PINNED_KEY, ids); }
+
+// ── CATÉGORIE (statut) modifiable & persistée ──────────────
+const STATUT_OVERRIDE_KEY = 'vm_statut_override';
+function getStatutOverrides() {
+  try { const o = JSON.parse(localStorage.getItem(STATUT_OVERRIDE_KEY)); return (o && typeof o === 'object') ? o : {}; }
+  catch(e) { return {}; }
+}
+function applyStatutOverrides() {
+  const o = getStatutOverrides();
+  Object.keys(o).forEach(id => {
+    const d = (window.DESTINATIONS || []).find(x => x.id === id);
+    if (d && STATUT_CONFIG[o[id]]) d.statut = o[id];
+  });
+}
+function setDestStatut(id, statut) {
+  if (!STATUT_CONFIG[statut]) return;
+  const d = DESTINATIONS.find(x => x.id === id);
+  if (!d) return;
+  d.statut = statut;
+  const o = getStatutOverrides(); o[id] = statut; lsSafe(STATUT_OVERRIDE_KEY, o);
+  buildPinned(); buildDashboard(); buildBudget(); renderDestGrid();
+  if (currentDest && currentDest.id === id) {
+    const s = STATUT_CONFIG[statut];
+    const st = document.getElementById('modal-subtitle');
+    if (st) st.innerHTML = `<span class="badge badge-${escHtml(s.cls)}">${escHtml(s.label)}</span> &nbsp; ${escHtml(d.pays)} &nbsp; · &nbsp; ${escHtml(d.dates || 'Projet futur')}`;
   }
-  update();
-  setInterval(update, 60000);
+  showToast('🗂️ Catégorie : ' + STATUT_CONFIG[statut].label);
+}
+
+function nightsOf(d) {
+  if (d.date_depart && d.date_retour) {
+    const n = Math.round((new Date(d.date_retour) - new Date(d.date_depart)) / 86400000);
+    if (n > 0) return n;
+  }
+  return null;
+}
+
+function heroPills(d) {
+  if (d.hero && Array.isArray(d.hero.pills)) return d.hero.pills;
+  const pills = [];
+  if (d.vol_prix) pills.push('✈️ ' + d.vol_prix);
+  const nb = nightsOf(d);
+  if (nb) pills.push(`🏨 ${nb} nuits / ${nb+1} jours`);
+  else if (d.dates) pills.push('📅 ' + d.dates);
+  if (d.budget_min) pills.push(d.budget_min === d.budget_max ? `💳 ${d.budget_min}€` : `💶 ${d.budget_min}–${d.budget_max}€`);
+  if (d.budget_restant) pills.push(`🎯 Budget restant : ~${d.budget_restant}€`);
+  return pills;
+}
+
+// Suivi d'avancement du voyage associé (trip du store) à une destination
+function tripProgressForDest(id) {
+  try {
+    const t = window.getTripByDestination ? getTripByDestination(id) : null;
+    if (t) return { pct: progress(t), meta: tripStatusMeta(t.status) };
+  } catch(e) {}
+  return null;
+}
+
+function heroHTML(d) {
+  const confirmed = d.statut === 'confirme';
+  const sub = (d.hero && d.hero.sub) || d.logement || d.description || '';
+  const pills = heroPills(d);
+  const cd = d.date_depart ? `<div class="countdown" data-date="${escHtml(d.date_depart)}"></div>` : '';
+  const tp = tripProgressForDest(d.id);
+  const progColor = tp ? (tp.pct >= 80 ? 'var(--green)' : tp.pct >= 40 ? 'var(--yellow)' : 'var(--muted)') : '';
+  const progHTML = tp ? `
+      <div class="hero-prog" title="Avancement du voyage — se met à jour quand tu complètes la fiche">
+        <span class="hero-prog-status" style="--c:${tp.meta.color}">${escHtml(tp.meta.label)}</span>
+        <div class="hero-prog-bars">
+          <div class="trip-prog"><div class="trip-prog-bar" style="width:${tp.pct}%;background:${progColor}"></div></div>
+          <span class="trip-prog-pct">${tp.pct}%</span>
+        </div>
+      </div>` : '';
+  return `
+  <div class="hero-confirmed${confirmed ? '' : ' hero-plan'}" draggable="true" data-pinid="${escHtml(d.id)}"
+       onclick="heroClick(event,'${escHtml(d.id)}')" ondblclick="openPinnedTrip('${escHtml(d.id)}')"
+       ondragstart="pinDragStart(event,'${escHtml(d.id)}')" ondragover="pinDragOver(event)"
+       ondragleave="event.currentTarget.classList.remove('pin-dragover')"
+       ondrop="pinDrop(event,'${escHtml(d.id)}')" ondragend="pinDragEnd(event)"
+       title="Clique pour ouvrir la préparation & le suivi du voyage">
+    <span class="pin-grip" title="Glisser pour réordonner">⠿</span>
+    <button class="pin-remove" onclick="event.stopPropagation();unpinTrip('${escHtml(d.id)}')" title="Retirer de l'accueil" aria-label="Retirer de l'accueil">✕</button>
+    <div class="hero-emoji">${escHtml(d.emoji)}</div>
+    <div class="hero-content">
+      <h1>${escHtml(d.nom)} ${confirmed ? '✅' : ''}</h1>
+      <div class="hero-sub">${escHtml(sub)}</div>
+      ${cd}
+      <div class="hero-meta">${pills.map(p => `<span class="hero-pill">${escHtml(p)}</span>`).join('')}</div>
+      ${progHTML}
+    </div>
+    <div class="hero-actions">
+      <button class="btn ${confirmed ? 'btn-success' : 'btn-primary'}" onclick="event.stopPropagation();openPinnedTrip('${escHtml(d.id)}')">🧭 Préparation & suivi</button>
+      <button class="btn btn-outline" onclick="event.stopPropagation();openDest('${escHtml(d.id)}')">ℹ️ Fiche destination</button>
+      <button class="btn btn-outline" onclick="event.stopPropagation();showPage('carte');setTimeout(()=>focusMap('${escHtml(d.id)}'),300)">📍 Sur la carte</button>
+      <button class="btn btn-outline" onclick="event.stopPropagation();archiveTrip('${escHtml(d.id)}')">🗄️ Archiver</button>
+    </div>
+  </div>`;
+}
+
+// Clic sur une carte épinglée (hors boutons) → préparation & suivi du voyage
+function heroClick(e, id) {
+  if (e.target.closest('button') || e.target.closest('a')) return;
+  openPinnedTrip(id);
+}
+// Ouvre la fiche de préparation & suivi (crée le voyage si besoin), sinon la fiche destination
+function openPinnedTrip(id) {
+  try {
+    const t = window.getTripByDestination ? getTripByDestination(id) : null;
+    if (t && window.openTripModal) { openTripModal(t.id); return; }
+    if (window.vmCreateTrip) { vmCreateTrip(id); return; }
+  } catch(e) {}
+  openDest(id);
+}
+
+function buildPinned() {
+  const mount = document.getElementById('pinned-mount');
+  if (!mount) return;
+  const ids = getPinnedIds();
+  const dests = ids.map(id => DESTINATIONS.find(d => d.id === id)).filter(Boolean);
+  const archived = getArchivedIds();
+  const unpinned = DESTINATIONS.filter(d => !ids.includes(d.id) && !archived.includes(d.id));
+
+  let html = dests.map(heroHTML).join('');
+  if (dests.length) {
+    html += `<div class="pin-hint">↕ Glisse les cartes pour réordonner (la 1re est en tête) · clique une carte pour la préparation &amp; le suivi · ✕ pour retirer</div>`;
+  }
+  // Zone de dépôt qui remplit l'espace restant de la colonne
+  html += `<div class="pin-dropzone${dests.length ? '' : ' pin-dropzone-empty'}">
+      <div>📥 <strong>Glisse un voyage ici</strong> pour l'épingler${dests.length ? '' : '<br><span style="font-size:.8rem">…ou clique sur une destination dans le panneau de droite</span>'}</div>
+    </div>`;
+
+  mount.innerHTML = html;
+  // Le conteneur accepte les dépôts (drag depuis le sélecteur → épingle en fin de liste)
+  mount.ondragover = (e) => { e.preventDefault(); mount.classList.add('pin-mount-over'); };
+  mount.ondragleave = () => mount.classList.remove('pin-mount-over');
+  mount.ondrop = (e) => pinDropOnMount(e);
+  buildPinSelector();
+  refreshCountdowns();
+}
+
+// Panneau latéral : volets déroulants par statut + drag-and-drop
+function buildPinSelector() {
+  const el = document.getElementById('pin-selector');
+  if (!el) return;
+  const pinned = new Set(getPinnedIds());
+  const archived = new Set(getArchivedIds());
+  const groups = [
+    { key: 'confirme',         label: '✅ Confirmés' },
+    { key: 'planification',    label: '🔍 En planification' },
+    { key: 'projet',           label: '📋 Projets Europe' },
+    { key: 'projet_longterme', label: '🌍 Longs courriers' },
+  ];
+  let html = `<div class="pin-selector-head">📌 Épingler au tableau de bord</div>
+    <div class="pin-selector-sub">Glisse une destination vers la gauche, ou clique pour l'épingler.</div>`;
+  groups.forEach(g => {
+    const items = DESTINATIONS.filter(d => d.statut === g.key && !archived.has(d.id))
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+    if (!items.length) return;
+    const openAttr = (g.key === 'confirme' || g.key === 'planification') ? ' open' : '';
+    html += `<details class="pin-group"${openAttr}>
+      <summary>${g.label} <span class="pin-group-count">${items.length}</span></summary>
+      <div class="pin-group-body">
+        ${items.map(d => `
+          <div class="pin-sel-item${pinned.has(d.id) ? ' is-pinned' : ''}" draggable="true" data-selid="${escHtml(d.id)}"
+               ondragstart="pinSelDragStart(event,'${escHtml(d.id)}')" ondragend="pinDragEnd(event)"
+               onclick="${pinned.has(d.id) ? `unpinTrip('${escHtml(d.id)}')` : `pinTrip('${escHtml(d.id)}')`}"
+               title="${pinned.has(d.id) ? 'Déjà épinglé — cliquer pour retirer' : 'Cliquer ou glisser pour épingler'}">
+            <span class="pin-sel-emoji">${escHtml(d.emoji)}</span>
+            <span class="pin-sel-name">${escHtml(d.nom)}</span>
+            <span class="pin-sel-act">${pinned.has(d.id) ? '✓' : '+'}</span>
+          </div>`).join('')}
+      </div>
+    </details>`;
+  });
+  el.innerHTML = html;
+}
+
+function pinTrip(id) {
+  const ids = getPinnedIds();
+  if (!ids.includes(id)) { ids.push(id); setPinnedIds(ids); }
+  // Épingler un voyage archivé le réactive
+  if (getArchivedIds().includes(id)) setArchivedIds(getArchivedIds().filter(x => x !== id));
+  buildPinned();
+  showToast('📌 Épinglé à l\'accueil');
+}
+function unpinTrip(id) {
+  setPinnedIds(getPinnedIds().filter(x => x !== id));
+  buildPinned();
+}
+
+// Drag & drop réordonnancement
+let _pinDragId = null;
+function pinDragStart(e, id) {
+  _pinDragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', id); } catch(_) {}
+  e.currentTarget.classList.add('pin-dragging');
+}
+function pinDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  if (e.currentTarget.dataset.pinid !== _pinDragId) e.currentTarget.classList.add('pin-dragover');
+}
+// Drag depuis le sélecteur latéral
+function pinSelDragStart(e, id) {
+  _pinDragId = id;
+  e.dataTransfer.effectAllowed = 'copyMove';
+  try { e.dataTransfer.setData('text/plain', id); } catch(_) {}
+}
+// Dépôt sur une carte épinglée : réordonne, ou insère à cette position si nouveau
+function pinDrop(e, targetId) {
+  e.preventDefault(); e.stopPropagation();
+  if (!_pinDragId) return;
+  const ids = getPinnedIds();
+  const to = ids.indexOf(targetId);
+  const from = ids.indexOf(_pinDragId);
+  if (from < 0) {
+    // Vient du sélecteur → insère avant la carte cible
+    if (getArchivedIds().includes(_pinDragId)) setArchivedIds(getArchivedIds().filter(x => x !== _pinDragId));
+    ids.splice(to < 0 ? ids.length : to, 0, _pinDragId);
+  } else {
+    if (to < 0 || from === to) { pinDragEnd(); buildPinned(); return; }
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+  }
+  setPinnedIds(ids);
+  buildPinned();
+}
+// Dépôt sur le conteneur (zone vide) : épingle en fin de liste
+function pinDropOnMount(e) {
+  e.preventDefault();
+  const mount = document.getElementById('pinned-mount');
+  if (mount) mount.classList.remove('pin-mount-over');
+  if (!_pinDragId) return;
+  const ids = getPinnedIds();
+  if (!ids.includes(_pinDragId)) {
+    if (getArchivedIds().includes(_pinDragId)) setArchivedIds(getArchivedIds().filter(x => x !== _pinDragId));
+    ids.push(_pinDragId);
+    setPinnedIds(ids);
+    buildPinned();
+  }
+  _pinDragId = null;
+}
+function pinDragEnd() {
+  document.querySelectorAll('.pin-dragging,.pin-dragover,.pin-mount-over').forEach(el => el.classList.remove('pin-dragging', 'pin-dragover', 'pin-mount-over'));
+  _pinDragId = null;
+}
+
+// ── Épingler / archiver depuis la fiche ouverte ──
+function togglePinCurrent() {
+  if (!currentDest) return;
+  const id = currentDest.id;
+  if (getPinnedIds().includes(id)) unpinTrip(id);
+  else pinTrip(id);
+  syncModalButtons();
+}
+function toggleArchiveCurrent() {
+  if (!currentDest) return;
+  const id = currentDest.id;
+  if (getArchivedIds().includes(id)) unarchiveTrip(id);
+  else archiveTrip(id);
+  syncModalButtons();
+}
+function syncModalButtons() {
+  if (!currentDest) return;
+  const pinned = getPinnedIds().includes(currentDest.id);
+  const archived = getArchivedIds().includes(currentDest.id);
+  const pinBtn = document.getElementById('modal-pin-btn');
+  const arcBtn = document.getElementById('modal-archive-btn');
+  if (pinBtn) {
+    pinBtn.classList.toggle('active', pinned);
+    pinBtn.title = pinned ? 'Retirer de l\'accueil' : 'Épingler à l\'accueil';
+  }
+  if (arcBtn) {
+    arcBtn.classList.toggle('active', archived);
+    arcBtn.textContent = archived ? '📤' : '🗄️';
+    arcBtn.title = archived ? 'Désarchiver ce voyage' : 'Archiver ce voyage';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  ARCHIVES
+// ════════════════════════════════════════════════════════
+function archiveTrip(id) {
+  const a = getArchivedIds();
+  if (!a.includes(id)) { a.push(id); setArchivedIds(a); }
+  setPinnedIds(getPinnedIds().filter(x => x !== id));
+  buildPinned();
+  if (currentPage === 'archives') buildArchives();
+  showToast('🗄️ Voyage archivé');
+}
+function unarchiveTrip(id) {
+  setArchivedIds(getArchivedIds().filter(x => x !== id));
+  buildArchives();
+  buildPinned();
+  showToast('📤 Voyage désarchivé');
+}
+
+function buildArchives() {
+  const mount = document.getElementById('archives-mount');
+  if (!mount) return;
+  const ids = getArchivedIds();
+  const dests = ids.map(id => DESTINATIONS.find(d => d.id === id)).filter(Boolean);
+  const cnt = document.getElementById('archives-count');
+  if (cnt) cnt.textContent = dests.length ? dests.length + ' voyage' + (dests.length > 1 ? 's' : '') + ' archivé' + (dests.length > 1 ? 's' : '') : '';
+  if (!dests.length) {
+    mount.innerHTML = `<div class="pin-empty">Aucun voyage archivé pour l'instant. Depuis une fiche ou une carte épinglée, clique sur 🗄️ pour archiver un voyage terminé.</div>`;
+    return;
+  }
+  mount.className = 'grid grid-3';
+  mount.innerHTML = dests.map(d => {
+    const s = STATUT_CONFIG[d.statut] || {};
+    return `
+    <div class="dest-card archive-card" style="position:relative" onclick="openDest('${escHtml(d.id)}')">
+      <div style="display:flex;gap:6px;position:absolute;top:8px;right:8px;z-index:2">
+        <button class="planif-dismiss" style="position:static" title="Réactiver ce voyage" onclick="event.stopPropagation();unarchiveTrip('${escHtml(d.id)}')">📤</button>
+      </div>
+      <div class="dest-emoji">${escHtml(d.emoji)}</div>
+      <div class="dest-name">${escHtml(d.nom)}</div>
+      <div class="dest-pays">${escHtml(d.pays)}${d.dates ? ' · ' + escHtml(d.dates) : ''}</div>
+      <span class="badge badge-${escHtml(s.cls||'')}">${escHtml(s.label||'')}</span>
+      <div class="dest-budget">💶 ${d.budget_min}–${d.budget_max}€</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px">📋 Ouvrir pour relire les bons plans</div>
+    </div>`;
+  }).join('');
 }
 
 // ── DASHBOARD ──────────────────────────────────────────
@@ -697,7 +1052,8 @@ function buildDashboard() {
 
   // Active destinations — avec bouton retrait
   const hiddenPlanif = new Set(JSON.parse(localStorage.getItem('vm_hidden_planif') || '[]'));
-  const actives = DESTINATIONS.filter(d => d.statut === 'planification' && !hiddenPlanif.has(d.id));
+  const archivedSet = new Set(getArchivedIds());
+  const actives = DESTINATIONS.filter(d => d.statut === 'planification' && !hiddenPlanif.has(d.id) && !archivedSet.has(d.id));
   const grid = document.getElementById('active-dest-grid');
   if (actives.length) {
     grid.className = 'grid grid-4';
@@ -787,7 +1143,8 @@ function destCardHTML(d, match) {
 
 function renderDestGrid() {
   const q = currentSearchQuery.toLowerCase();
-  let list = DESTINATIONS.filter(d => {
+  const archivedSet = new Set(getArchivedIds());
+  let list = DESTINATIONS.filter(d => !archivedSet.has(d.id)).filter(d => {
     if(currentFiltre === 'all') return true;
     if(['plage','ville','nature','culture','randonnee'].includes(currentFiltre)) return (d.type||[]).includes(currentFiltre);
     return d.statut === currentFiltre;
@@ -795,6 +1152,12 @@ function renderDestGrid() {
 
   const advActive = advFilter.budget != null || advFilter.depart || advFilter.retour;
   const grid = document.getElementById('dest-grid');
+
+  // Compteur de résultats
+  const cnt = document.getElementById('dest-count');
+  if (cnt) cnt.textContent = list.length === DESTINATIONS.length
+    ? DESTINATIONS.length + ' destinations'
+    : list.length + ' sur ' + DESTINATIONS.length + ' destinations';
 
   if (viewMode === 'continent') {
     // Grouper par continent → pays → destinations (tri alphabétique à chaque niveau)
@@ -814,7 +1177,9 @@ function renderDestGrid() {
       return `<div class="continent-section">
         <div class="continent-header">${CONTINENT_EMOJI[cont]||'🌐'} ${cont}</div>
         ${countries.map(pays => {
-          const dests = groups[cont][pays].sort((a,b) => a.nom.localeCompare(b.nom,'fr'));
+          const dests = currentSort === 'default'
+            ? groups[cont][pays].sort((a,b) => a.nom.localeCompare(b.nom,'fr'))
+            : sortDests(groups[cont][pays]);
           return `<div class="country-group">
             <div class="country-label">🏳 ${pays} <span style="color:var(--accent);font-weight:400">(${dests.length})</span></div>
             <div class="grid grid-4">${dests.map(d => advActive ? destCardHTML(d, matchAdvFilter(d)) : destCardHTML(d)).join('')}</div>
@@ -832,8 +1197,27 @@ function renderDestGrid() {
                .sort((a,b) => rank[a.m] - rank[b.m]);
     grid.innerHTML = list.map(x => destCardHTML(x.d, x.m)).join('');
   } else {
-    grid.innerHTML = list.map(d => destCardHTML(d)).join('');
+    grid.innerHTML = sortDests(list).map(d => destCardHTML(d)).join('');
   }
+}
+
+// Tri des destinations (copie triée, ne modifie pas l'original)
+function sortDests(arr) {
+  const a = arr.slice();
+  const statutOrder = { confirme:0, planification:1, projet:2, projet_longterme:3 };
+  switch(currentSort) {
+    case 'nom':        return a.sort((x,y) => x.nom.localeCompare(y.nom,'fr'));
+    case 'nom_desc':   return a.sort((x,y) => y.nom.localeCompare(x.nom,'fr'));
+    case 'budget_asc': return a.sort((x,y) => (x.budget_min||0) - (y.budget_min||0));
+    case 'budget_desc':return a.sort((x,y) => (y.budget_max||0) - (x.budget_max||0));
+    case 'statut':     return a.sort((x,y) => (statutOrder[x.statut]??9) - (statutOrder[y.statut]??9) || x.nom.localeCompare(y.nom,'fr'));
+    default:           return a;
+  }
+}
+function setSort(v) {
+  currentSort = v;
+  sessionStorage.setItem('vm_sort', v);
+  renderDestGrid();
 }
 
 function setFiltre(f) {
@@ -856,6 +1240,8 @@ function restoreFilters() {
   if (f) { currentFiltre = f; document.querySelectorAll('.filtre-btn').forEach(b => b.classList.toggle('active', b.dataset.filtre === f)); }
   const q = sessionStorage.getItem('vm_search');
   if (q) { currentSearchQuery = q; const inp = document.querySelector('.search-input'); if (inp) inp.value = q; }
+  const s = sessionStorage.getItem('vm_sort');
+  if (s) { currentSort = s; const sel = document.getElementById('sort-select'); if (sel) sel.value = s; }
 }
 
 // ── MODAL DESTINATION ──────────────────────────────────
@@ -870,6 +1256,13 @@ function openDest(id) {
 
   // Tab Infos
   document.getElementById('tab-infos').innerHTML = `
+    <div class="cat-select-row">
+      <label>🗂️ Catégorie</label>
+      <select class="cat-select" onchange="setDestStatut('${escHtml(d.id)}', this.value)" aria-label="Changer la catégorie du voyage">
+        ${Object.keys(STATUT_CONFIG).map(k => `<option value="${k}"${d.statut === k ? ' selected' : ''}>${STATUT_CONFIG[k].label}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="openPinnedTrip('${escHtml(d.id)}')" style="margin-left:auto">🧭 Préparation &amp; suivi</button>
+    </div>
     <div class="info-box ${d.statut==='confirme'?'success':''}" style="margin-bottom:16px">
       <strong>${escHtml(d.description)}</strong>
     </div>
@@ -1014,6 +1407,7 @@ function openDest(id) {
   // Tab Recherche
   buildSearchTabForDest(d);
 
+  syncModalButtons();
   _openModal();
   showTab('infos');
 }

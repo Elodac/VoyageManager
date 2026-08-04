@@ -58,17 +58,60 @@ function ensureModal() {
   return ov;
 }
 
-function elementRow(label, emoji, type, statusKey, dataAttr) {
+const _esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function elementRow(label, emoji, type, statusKey, dataAttr, value, editKey) {
   const opts = ELEMENT_STATUS[type];
-  const meta = elStatusMeta(type, statusKey);
+  const editable = editKey != null
+    ? `<div class="el-value" data-edit="${editKey}" data-val="${_esc(value)}" title="Double-clique pour modifier">${value ? _esc(value) : '<em>à préciser…</em>'}</div>`
+    : '';
   return `
     <div class="el-row">
-      <div class="el-label">${emoji} ${label}</div>
+      <div class="el-label">
+        <div>${emoji} ${label}</div>
+        ${editable}
+      </div>
       <div class="el-chips">
         ${opts.map(o => `<button class="status-chip ${o.key === statusKey ? 'on' : ''}" style="--c:${o.color}"
             ${dataAttr}="${o.key}">${o.label}</button>`).join('')}
       </div>
     </div>`;
+}
+
+// Édition inline d'un intitulé (transport/hébergement/activité) au double-clic
+function startInlineEdit(el, id) {
+  const kind = el.dataset.edit;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'add-item-input';
+  input.value = el.dataset.val || '';
+  input.style.width = '100%';
+  el.replaceWith(input);
+  input.focus(); input.select();
+  let done = false;
+  const finish = (commit) => {
+    if (done) return; done = true;
+    if (commit) {
+      const v = input.value.trim();
+      updateTrip(id, t2 => {
+        if (kind === 'transport') return { transport: { ...t2.transport, label: v } };
+        if (kind === 'hebergement') return { hebergement: { ...t2.hebergement, nom: v } };
+        if (kind.startsWith('act:')) {
+          const i = +kind.slice(4);
+          const acts = (t2.activites || []).slice();
+          if (acts[i]) acts[i] = { ...acts[i], nom: v };
+          return { activites: acts };
+        }
+        return {};
+      });
+    }
+    openTripModal(id);
+  };
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+  });
+  input.addEventListener('blur', () => finish(true));
 }
 
 function openTripModal(id) {
@@ -97,23 +140,26 @@ function openTripModal(id) {
       </div>
 
       <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">🧩 Avancement par élément</h3>
-      ${elementRow('Transport', '✈️', 'transport', t.transport.status, 'data-transport')}
-      ${elementRow('Hébergement', '🏨', 'hebergement', t.hebergement.status, 'data-hebergement')}
+      ${elementRow('Transport', '✈️', 'transport', t.transport.status, 'data-transport', t.transport.label, 'transport')}
+      ${elementRow('Hébergement', '🏨', 'hebergement', t.hebergement.status, 'data-hebergement', t.hebergement.nom, 'hebergement')}
 
-      ${t.activites && t.activites.length ? `
-        <div class="el-label" style="margin:14px 0 8px">🎯 Activités</div>
-        <div class="act-list">
-          ${t.activites.map((a, i) => {
-            const am = elStatusMeta('activite', a.status);
-            return `<div class="act-item">
-              <span class="act-name">${a.nom}</span>
-              <button class="status-chip on" style="--c:${am.color}" data-act="${i}">${am.label}</button>
-            </div>`;
-          }).join('')}
-        </div>` : ''}
+      <div class="el-label" style="margin:14px 0 8px;display:flex;align-items:center;gap:8px">
+        🎯 Activités
+        <button class="btn btn-outline btn-sm" data-add-act style="margin-left:auto;padding:3px 10px">➕ Ajouter</button>
+      </div>
+      <div class="act-list">
+        ${(t.activites || []).map((a, i) => {
+          const am = elStatusMeta('activite', a.status);
+          return `<div class="act-item">
+            <span class="act-name el-value" data-edit="act:${i}" data-val="${_esc(a.nom)}" title="Double-clique pour modifier">${_esc(a.nom)}</span>
+            <button class="status-chip on" style="--c:${am.color}" data-act="${i}">${am.label}</button>
+            <button class="act-del" data-del-act="${i}" title="Supprimer l'activité">✕</button>
+          </div>`;
+        }).join('') || '<div style="font-size:.8rem;color:var(--muted)">Aucune activité. Clique sur « Ajouter ».</div>'}
+      </div>
 
       <div class="info-box" style="margin-top:16px;font-size:.8rem">
-        💡 Clique sur un statut pour le changer (transport/hébergement) ou faire défiler (activités/statut global). La progression se met à jour automatiquement.
+        💡 Clique sur un statut pour le changer · <strong>double-clique</strong> sur un intitulé (transport, hébergement, activité) pour le modifier · la progression se met à jour toute seule.
       </div>
 
       <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">📅 Dates du voyage</h3>
@@ -128,6 +174,10 @@ function openTripModal(id) {
         </div>
         <button class="btn btn-outline btn-sm" id="trip-dates-save">💾 Enregistrer les dates</button>
       </div>
+
+      <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">📝 Notes &amp; bons plans</h3>
+      <textarea id="trip-notes" class="add-item-input" style="width:100%;min-height:82px;resize:vertical;font-size:.84rem;line-height:1.5"
+        placeholder="Réservations, bons plans, idées, contacts… (enregistré avec le bouton ci-dessous)">${_esc(t.notes || '')}</textarea>
 
       <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">🧰 Outils du voyage</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -144,11 +194,45 @@ function openTripModal(id) {
         <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${routardUrl((window.DESTINATIONS||[]).find(d=>d.id===t.destinationId)||{nom:t.nom})}">🧭 Guide du Routard</a>
         <button class="btn btn-sm" style="background:#3b1111;color:#f87171;border:1px solid #7f1d1d;margin-left:auto" data-delete-trip>🗑️ Supprimer ce voyage</button>
       </div>
+
+      <div class="trip-modal-footer">
+        <button class="btn btn-success" id="trip-save-quit">💾 Enregistrer et quitter</button>
+        <button class="btn btn-outline" data-close>Fermer</button>
+      </div>
     </div>`;
 
   // Handlers (délégation)
-  m.querySelector('[data-close]').addEventListener('click', () => ov.classList.add('hidden'));
+  m.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => ov.classList.add('hidden')));
   m.querySelector('[data-dossier]').addEventListener('click', () => openDossier(getTrip(id)));
+
+  // Enregistrer et quitter (dates + notes)
+  m.querySelector('#trip-save-quit').addEventListener('click', () => {
+    const dep = document.getElementById('trip-date-dep').value;
+    const ret = document.getElementById('trip-date-ret').value;
+    const notes = document.getElementById('trip-notes').value;
+    updateTrip(id, { date_depart: dep || null, date_retour: ret || null, notes });
+    ov.classList.add('hidden');
+    window.showToast && window.showToast('💾 Voyage enregistré !');
+  });
+
+  // Ajouter une activité
+  m.querySelector('[data-add-act]').addEventListener('click', () => {
+    const nom = prompt('Nom de l\'activité à ajouter :');
+    if (!nom || !nom.trim()) return;
+    updateTrip(id, t2 => ({ activites: [...(t2.activites || []), { nom: nom.trim(), type: 'culture', status: 'prevue' }] }));
+    openTripModal(id);
+  });
+  // Supprimer une activité
+  m.querySelectorAll('[data-del-act]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.dataset.delAct;
+    updateTrip(id, t2 => ({ activites: (t2.activites || []).filter((_, idx) => idx !== i) }));
+    openTripModal(id);
+  }));
+  // Édition inline au double-clic (transport / hébergement / activité)
+  m.addEventListener('dblclick', e => {
+    const el = e.target.closest('[data-edit]');
+    if (el) startInlineEdit(el, id);
+  });
   m.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
     ov.classList.add('hidden');
     vmGoTo(b.dataset.go, t.destinationId);
