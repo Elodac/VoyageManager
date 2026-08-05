@@ -70,6 +70,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
       <h2 style="margin:0">🧳 Mes voyages — suivi d'avancement</h2>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-success btn-sm" onclick="openCreateVoyage()" title="Créer un nouveau voyage à partir d'une destination">➕ Créer un voyage</button>
         <button class="btn btn-outline btn-sm" id="btn-export-json" title="Exporter toutes les données (JSON)">📤 Exporter</button>
         <label class="btn btn-outline btn-sm" title="Importer des données (JSON)" style="cursor:pointer">
           📥 Importer
@@ -809,6 +810,82 @@ function openPinnedTrip(id) {
   openDest(id);
 }
 
+// ── CRÉER UN VOYAGE (choix de destination + création guidée) ──
+function openCreateVoyage() {
+  let ov = document.getElementById('create-voyage-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'create-voyage-overlay';
+    ov.className = 'modal-overlay hidden';
+    ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.add('hidden'); });
+  }
+  ov.innerHTML = `
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header">
+        <div class="modal-emoji">🧳</div>
+        <div class="modal-title"><h2>Créer un voyage</h2>
+          <div style="color:var(--muted);font-size:.85rem">Choisis une destination — tu seras guidé pour la préparer.</div></div>
+        <button class="modal-close" onclick="document.getElementById('create-voyage-overlay').classList.add('hidden')" aria-label="Fermer">✕</button>
+      </div>
+      <div class="modal-body">
+        <input id="cv-search" class="add-item-input" placeholder="🔎 Rechercher une destination…" style="width:100%;margin-bottom:12px" oninput="renderCreateVoyageList(this.value)">
+        <div id="cv-list"></div>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:12px">Ta destination n'est pas là ?
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('create-voyage-overlay').classList.add('hidden');showPage('ajouter')">➕ Ajouter une destination</button></p>
+      </div>
+    </div>`;
+  ov.classList.remove('hidden');
+  renderCreateVoyageList('');
+  setTimeout(() => { const s = document.getElementById('cv-search'); if (s) s.focus(); }, 80);
+}
+
+function renderCreateVoyageList(q) {
+  const box = document.getElementById('cv-list'); if (!box) return;
+  q = (q || '').toLowerCase().trim();
+  const archived = new Set(getArchivedIds());
+  let list = DESTINATIONS.filter(d => !archived.has(d.id));
+  if (q) list = list.filter(d => d.nom.toLowerCase().includes(q) || d.pays.toLowerCase().includes(q));
+  if (!list.length) { box.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Aucune destination trouvée.</p>'; return; }
+  const CO = (typeof CONTINENT_ORDER !== 'undefined') ? CONTINENT_ORDER : [];
+  const groups = {};
+  list.forEach(d => { const c = (typeof CONTINENT_MAP !== 'undefined' && CONTINENT_MAP[d.pays]) || 'Autre'; (groups[c] = groups[c] || []).push(d); });
+  const order = CO.filter(c => groups[c]).concat(Object.keys(groups).filter(c => !CO.includes(c)).sort());
+  box.innerHTML = order.map(cont => `
+    <details class="pin-group"${(q || cont === 'Europe') ? ' open' : ''}>
+      <summary>${(typeof CONTINENT_EMOJI !== 'undefined' && CONTINENT_EMOJI[cont]) || '🌐'} ${cont} <span class="pin-group-count">${groups[cont].length}</span></summary>
+      <div class="pin-group-body">
+        ${groups[cont].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')).map(d => `
+          <div class="pin-sel-item" onclick="createVoyageFromDest('${escHtml(d.id)}')" title="Créer un voyage vers ${escHtml(d.nom)}">
+            <span class="pin-sel-emoji">${escHtml(d.emoji)}</span>
+            <span class="pin-sel-name">${escHtml(d.nom)} <span style="color:var(--muted);font-size:.72rem">· ${escHtml(d.pays)}</span></span>
+            <span class="pin-sel-act">➕</span>
+          </div>`).join('')}
+      </div>
+    </details>`).join('');
+}
+
+function createVoyageFromDest(id) {
+  const d = DESTINATIONS.find(x => x.id === id); if (!d) return;
+  if (getArchivedIds().includes(id)) setArchivedIds(getArchivedIds().filter(x => x !== id));
+  // Active le voyage (crée le trip + met à jour partout) s'il n'est pas déjà actif
+  if (d.statut !== 'confirme' && d.statut !== 'planification') {
+    setDestStatut(id, 'planification');
+  } else if (typeof getTripByDestination === 'function' && !getTripByDestination(id) &&
+             typeof addTrip === 'function' && typeof tripFromDestination === 'function') {
+    addTrip(tripFromDestination(d));
+  }
+  // Épingle en tête pour la visibilité immédiate
+  const ids = getPinnedIds(); if (!ids.includes(id)) { ids.unshift(id); setPinnedIds(ids); }
+  buildPinned(); buildDashboard();
+  const ov = document.getElementById('create-voyage-overlay'); if (ov) ov.classList.add('hidden');
+  // Ouvre la préparation guidée
+  const t = (typeof getTripByDestination === 'function') ? getTripByDestination(id) : null;
+  if (t && window.openTripModal) openTripModal(t.id); else openDest(id);
+  showToast('🧳 Voyage créé — complète sa préparation !');
+}
+
 function buildPinned() {
   const mount = document.getElementById('pinned-mount');
   if (!mount) return;
@@ -1040,10 +1117,8 @@ function getPrimaryDest() {
   // 4. Première destination en planification
   c = active.filter(d => d.statut === 'planification');
   if (c.length) return c[0];
-  // 5. Repli
-  const pinned = getPinnedIds();
-  if (pinned.length) { const d = DESTINATIONS.find(x => x.id === pinned[0]); if (d) return d; }
-  return active[0] || null;
+  // Pas de voyage actif : on n'affiche PAS un projet au hasard
+  return null;
 }
 
 // Checklist générée pour un voyage (quand pas de liste dédiée)
@@ -1121,14 +1196,19 @@ function buildDashboard() {
   const el = document.getElementById('todo-list');
   const timelineEl = document.getElementById('mini-timeline');
 
+  [todoTitleEl, progTitleEl].forEach(elt => { if (elt) { elt.onclick = null; elt.style.cursor = ''; elt.title = ''; elt.classList.remove('clickable-title'); } });
+
   if (!primary) {
     if (todoTitleEl) todoTitleEl.textContent = '🔴 À faire avant ton prochain voyage';
     if (progTitleEl) progTitleEl.textContent = '📅 Programme';
-    if (el) el.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Aucun voyage actif. Épingle ou confirme un voyage pour voir ta checklist ici.</p>';
+    const empty = `<p style="color:var(--muted);font-size:.85rem">Aucun voyage actif. Clique <button class="btn btn-primary btn-sm" onclick="openCreateVoyage()" style="margin:0 4px">➕ Créer un voyage</button> ou épingle une destination.</p>`;
+    if (el) el.innerHTML = empty;
     if (timelineEl) timelineEl.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Aucun programme pour le moment.</p>';
   } else {
     if (todoTitleEl) todoTitleEl.textContent = '🔴 À faire AVANT ' + shortName;
     if (progTitleEl) progTitleEl.textContent = (primary.statut === 'confirme' ? '📅 Voyage confirmé — ' : '📅 Programme — ') + shortName;
+    // Titres cliquables → ouvrir/modifier le voyage
+    [todoTitleEl, progTitleEl].forEach(elt => { if (elt) { elt.style.cursor = 'pointer'; elt.title = 'Ouvrir / modifier ce voyage'; elt.classList.add('clickable-title'); elt.onclick = () => openDest(primary.id); } });
 
     const todos = (primary.id === 'heraklion') ? CRETE_TODOS : genericTodos(primary);
     const key = 'todos_' + primary.id;

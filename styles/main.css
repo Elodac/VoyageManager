@@ -622,6 +622,10 @@ body:has(#page-transport.active) main{max-width:1600px}
 .sort-select{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:.76rem;outline:none;cursor:pointer}
 .sort-select:focus{border-color:var(--accent)}
 
+/* ── TITRES CLIQUABLES (panneaux dashboard) ──────────────── */
+.clickable-title{transition:color .15s}
+.clickable-title:hover{color:var(--accent)}
+
 /* ── CARTES ARCHIVES ─────────────────────────────────────── */
 .archive-card{opacity:.92}
 .archive-card:hover{opacity:1}
