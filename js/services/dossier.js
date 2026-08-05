@@ -5,7 +5,7 @@
 
 const pad = n => String(n).padStart(2, '0');
 const fmtMin = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
-const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escDoss = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 function readJSON(key) { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; } }
 
@@ -24,14 +24,14 @@ function buildDossierHTML(trip) {
   const tr = trip.transport || {};
   const hb = trip.hebergement || {};
   const transportRows = `
-    <tr><td>Mode</td><td>${esc(tr.label || tr.mode || dest.vol || '—')}</td></tr>
+    <tr><td>Mode</td><td>${escDoss(tr.label || tr.mode || dest.vol || '—')}</td></tr>
     <tr><td>Statut</td><td>${elStatusMeta('transport', tr.status).label}</td></tr>
-    ${dest.vol_prix ? `<tr><td>Prix</td><td>${esc(dest.vol_prix)}</td></tr>` : ''}`;
+    ${dest.vol_prix ? `<tr><td>Prix</td><td>${escDoss(dest.vol_prix)}</td></tr>` : ''}`;
   const hebRows = `
-    <tr><td>Hébergement</td><td>${esc(hb.nom || dest.logement || '—')}</td></tr>
+    <tr><td>Hébergement</td><td>${escDoss(hb.nom || dest.logement || '—')}</td></tr>
     <tr><td>Statut</td><td>${elStatusMeta('hebergement', hb.status).label}</td></tr>`;
   const actRows = (trip.activites || []).map(a =>
-    `<tr><td>${esc(a.nom)}</td><td>${elStatusMeta('activite', a.status).label}</td></tr>`).join('');
+    `<tr><td>${escDoss(a.nom)}</td><td>${elStatusMeta('activite', a.status).label}</td></tr>`).join('');
 
   // ── Planning (agenda) ──
   const ag = readJSON('voyagemanager_agenda')[trip.destinationId];
@@ -43,7 +43,7 @@ function buildDossierHTML(trip) {
       const dt = new Date(iso);
       const blocks = days[iso].sort((a, b) => a.start - b.start);
       return `<div class="day"><h3>${FR_DAYS[dt.getDay()]} ${dt.getDate()} ${FR_MONTHS[dt.getMonth()]}</h3>
-        <table>${blocks.map(b => `<tr><td class="t">${fmtMin(b.start)}–${fmtMin(b.start + b.dur)}</td><td>${esc((b.emoji || '') + ' ' + b.label)}</td></tr>`).join('')}</table></div>`;
+        <table>${blocks.map(b => `<tr><td class="t">${fmtMin(b.start)}–${fmtMin(b.start + b.dur)}</td><td>${escDoss((b.emoji || '') + ' ' + b.label)}</td></tr>`).join('')}</table></div>`;
     }).join('');
   }
 
@@ -52,21 +52,21 @@ function buildDossierHTML(trip) {
   let valiseHTML = '';
   if (valise) {
     valiseHTML = Object.entries(valise).map(([cat, items]) =>
-      `<div class="vcat"><h4>${esc(cat)}</h4><ul>${Object.entries(items).map(([it, done]) =>
-        `<li><span class="box ${done ? 'x' : ''}"></span>${esc(it)}</li>`).join('')}</ul></div>`).join('');
+      `<div class="vcat"><h4>${escDoss(cat)}</h4><ul>${Object.entries(items).map(([it, done]) =>
+        `<li><span class="box ${done ? 'x' : ''}"></span>${escDoss(it)}</li>`).join('')}</ul></div>`).join('');
   }
 
   // ── Restaurants / liens / urgences ──
   const restos = (dest.restaurants || []).map(r =>
-    `<tr><td>${esc(r.nom)}</td><td>${esc(r.note || '')} ${esc(r.prix || '')}</td><td>${esc(r.tel || '')}</td></tr>`).join('');
-  const liens = (dest.liens || []).map(l => `<li>${esc(l.label)} — ${esc(l.url)}</li>`).join('');
-  const urgences = (dest.urgences || []).map(u => `<tr><td>${esc(u.service)}</td><td>${esc(u.tel)}</td></tr>`).join('');
+    `<tr><td>${escDoss(r.nom)}</td><td>${escDoss(r.note || '')} ${escDoss(r.prix || '')}</td><td>${escDoss(r.tel || '')}</td></tr>`).join('');
+  const liens = (dest.liens || []).map(l => `<li>${escDoss(l.label)} — ${escDoss(l.url)}</li>`).join('');
+  const urgences = (dest.urgences || []).map(u => `<tr><td>${escDoss(u.service)}</td><td>${escDoss(u.tel)}</td></tr>`).join('');
 
-  const dates = trip.date_depart ? `${esc(trip.date_depart)} → ${esc(trip.date_retour || '?')}` : 'À définir';
-  const participants = (trip.participants || []).map(p => esc(p.nom || p)).join(', ') || 'Clément & Madame';
+  const dates = trip.date_depart ? `${escDoss(trip.date_depart)} → ${escDoss(trip.date_retour || '?')}` : 'À définir';
+  const participants = (trip.participants || []).map(p => escDoss(p.nom || p)).join(', ') || 'Clément & Madame';
   const today = new Date().toLocaleDateString('fr-FR');
 
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Dossier de voyage — ${esc(trip.nom)}</title>
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Dossier de voyage — ${escDoss(trip.nom)}</title>
   <style>
     *{box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;color:#111;margin:22px;font-size:12px;line-height:1.4}
     header{border-bottom:3px solid #111;padding-bottom:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}
@@ -90,18 +90,18 @@ function buildDossierHTML(trip) {
     <div class="no-print" style="margin-bottom:14px"><button onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button></div>
     <header>
       <div>
-        <h1>${esc(dest.emoji || '✈️')} Dossier de voyage — ${esc(trip.nom)}</h1>
-        <div class="hsub">${esc(dest.pays || '')} · ${dates} · Participants : ${participants}</div>
+        <h1>${escDoss(dest.emoji || '✈️')} Dossier de voyage — ${escDoss(trip.nom)}</h1>
+        <div class="hsub">${escDoss(dest.pays || '')} · ${dates} · Participants : ${participants}</div>
         <span class="badge">${sMeta.label}</span>
       </div>
       <div style="text-align:right;font-size:11px;color:#555">Édité le ${today}<br>VoyageManager</div>
     </header>
 
     ${section('🧭 Informations générales', `<table>
-      <tr><td class="t">Destination</td><td>${esc(dest.nom || trip.nom)}</td></tr>
+      <tr><td class="t">Destination</td><td>${escDoss(dest.nom || trip.nom)}</td></tr>
       <tr><td class="t">Dates</td><td>${dates}</td></tr>
       <tr><td class="t">Budget estimé</td><td>${trip.budget ? `${trip.budget.min}–${trip.budget.max} €` : '—'}</td></tr>
-      ${dest.meteo ? `<tr><td class="t">Météo</td><td>${Object.entries(dest.meteo).map(([k, v]) => `${k} : ${esc(v)}`).join(' · ')}</td></tr>` : ''}
+      ${dest.meteo ? `<tr><td class="t">Météo</td><td>${Object.entries(dest.meteo).map(([k, v]) => `${k} : ${escDoss(v)}`).join(' · ')}</td></tr>` : ''}
     </table>`)}
 
     ${section('✈️ Transport', `<table>${transportRows}</table>`)}
@@ -112,7 +112,7 @@ function buildDossierHTML(trip) {
     ${section('🔗 Liens utiles', liens ? `<ul>${liens}</ul>` : '')}
     ${section('🚨 Urgences', urgences ? `<table>${urgences}</table>` : '')}
     ${section('🧳 Check-list valise', valiseHTML ? `<div class="cols2">${valiseHTML}</div>` : '<p style="color:#888">Aucune valise préparée.</p>')}
-    ${section('📝 Notes', trip.notes ? `<p>${esc(trip.notes)}</p>` : '<p style="color:#888">—</p>')}
+    ${section('📝 Notes', trip.notes ? `<p>${escDoss(trip.notes)}</p>` : '<p style="color:#888">—</p>')}
 
     <footer><span>VoyageManager — Clément &amp; Madame</span><span>Bon voyage ✈️</span></footer>
     <script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script>

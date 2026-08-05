@@ -132,10 +132,14 @@ function openTripModal(id) {
     </div>
     <div class="modal-body">
       <div class="trip-status-block">
-        <div class="el-label" style="margin-bottom:8px">📊 Statut global du voyage</div>
-        <div class="el-chips" id="trip-global-status">
-          ${TRIP_STATUS.map(s => `<button class="status-chip ${s.key === t.status ? 'on' : ''}" style="--c:${s.color}" data-trip-status="${s.key}">${s.label}</button>`).join('')}
-        </div>
+        <div class="el-label" style="margin-bottom:8px">🗂️ État du voyage</div>
+        <select class="cat-select" id="trip-cat-select" style="width:100%;max-width:340px">
+          <option value="confirme">✅ Confirmé</option>
+          <option value="planification">🔍 En planification</option>
+          <option value="projet">📋 Projet Europe</option>
+          <option value="projet_longterme">🌍 Long courrier</option>
+          <option value="aucun">➖ Retirer du suivi (archiver)</option>
+        </select>
         <div class="trip-prog-row" style="margin-top:14px">${progressBar(pct)}</div>
       </div>
 
@@ -238,11 +242,18 @@ function openTripModal(id) {
     vmGoTo(b.dataset.go, t.destinationId);
   }));
 
-  m.querySelector('#trip-global-status').addEventListener('click', e => {
-    const b = e.target.closest('[data-trip-status]'); if (!b) return;
-    updateTrip(id, { status: b.dataset.tripStatus });
-    openTripModal(id);
-  });
+  // Sélecteur d'état unifié (catégorie destination + statut voyage synchronisés)
+  const catSel = m.querySelector('#trip-cat-select');
+  if (catSel) {
+    const dstatut = ((window.DESTINATIONS || []).find(d => d.id === t.destinationId) || {}).statut || 'projet';
+    catSel.value = dstatut;
+    catSel.addEventListener('change', () => {
+      const v = catSel.value;
+      if (window.setDestStatut) window.setDestStatut(t.destinationId, v);
+      if (v === 'aucun') { ov.classList.add('hidden'); return; } // archivé → on ferme
+      openTripModal(id);
+    });
+  }
   m.querySelectorAll('[data-transport]').forEach(b => b.addEventListener('click', () => {
     updateTrip(id, t2 => ({ transport: { ...t2.transport, status: b.dataset.transport } }));
     openTripModal(id);

@@ -48,19 +48,19 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
   <!-- Stats globales -->
   <div class="stats-row">
     <div class="stat-card">
-      <div class="stat-val" style="color:var(--green)">1</div>
-      <div class="stat-label">Voyage confirmé</div>
+      <div class="stat-val" style="color:var(--green)" id="stat-confirme">1</div>
+      <div class="stat-label">Confirmé(s)</div>
     </div>
     <div class="stat-card">
-      <div class="stat-val" style="color:var(--yellow)">6</div>
+      <div class="stat-val" style="color:var(--yellow)" id="stat-planification">6</div>
       <div class="stat-label">En planification</div>
     </div>
     <div class="stat-card">
-      <div class="stat-val" style="color:var(--accent2)">10</div>
+      <div class="stat-val" style="color:var(--accent2)" id="stat-projet">10</div>
       <div class="stat-label">Projets Europe</div>
     </div>
     <div class="stat-card">
-      <div class="stat-val" style="color:var(--purple)">4</div>
+      <div class="stat-val" style="color:var(--purple)" id="stat-projet_longterme">4</div>
       <div class="stat-label">Longs courriers</div>
     </div>
   </div>
@@ -83,11 +83,11 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
   <!-- Checklists prioritaires -->
   <div class="grid grid-2" style="margin-bottom:20px">
     <div class="card">
-      <h2>🔴 À faire AVANT la Crète</h2>
+      <h2 id="todo-title">🔴 À faire AVANT</h2>
       <div id="todo-list"></div>
     </div>
     <div class="card">
-      <h2>📅 Voyage confirmé — Programme</h2>
+      <h2 id="programme-title">📅 Programme</h2>
       <div class="timeline" id="mini-timeline"></div>
     </div>
   </div>
@@ -541,8 +541,8 @@ document.addEventListener('DOMContentLoaded', () => {
   applyStatutOverrides(); // catégories personnalisées par l'utilisateur
   restoreFilters();
   buildPinned();
-  // Met à jour le suivi d'avancement des cartes épinglées quand un voyage change
-  if (window.subscribe) { try { subscribe(() => buildPinned()); } catch(e) {} }
+  // Met à jour les cartes épinglées + panneaux dynamiques quand un voyage change
+  if (window.subscribe) { try { subscribe(() => { buildPinned(); buildDashboard(); }); } catch(e) {} }
   buildDashboard();
   buildDestGrid();
   buildBudget();
@@ -693,18 +693,35 @@ function applyStatutOverrides() {
   });
 }
 function setDestStatut(id, statut) {
-  if (!STATUT_CONFIG[statut]) return;
   const d = DESTINATIONS.find(x => x.id === id);
   if (!d) return;
+  // "Aucun / retirer du suivi" → archive le voyage
+  if (statut === 'aucun') { archiveTrip(id); return; }
+  if (!STATUT_CONFIG[statut]) return;
+  // Changer la catégorie réactive un voyage archivé
+  if (getArchivedIds().includes(id)) setArchivedIds(getArchivedIds().filter(x => x !== id));
   d.statut = statut;
   const o = getStatutOverrides(); o[id] = statut; lsSafe(STATUT_OVERRIDE_KEY, o);
+  // Synchronise le voyage (trip) associé pour que le suivi soit cohérent
+  try {
+    if (typeof getTripByDestination === 'function') {
+      let trip = getTripByDestination(id);
+      if (!trip && (statut === 'confirme' || statut === 'planification') &&
+          typeof addTrip === 'function' && typeof tripFromDestination === 'function') {
+        trip = addTrip(tripFromDestination(d)); // crée le voyage si on l'active
+      }
+      if (trip && typeof updateTrip === 'function' && typeof CATALOG_TO_TRIP_STATUS !== 'undefined') {
+        updateTrip(trip.id, { status: CATALOG_TO_TRIP_STATUS[statut] || 'idee' });
+      }
+    }
+  } catch(e) {}
   buildPinned(); buildDashboard(); buildBudget(); renderDestGrid();
   if (currentDest && currentDest.id === id) {
     const s = STATUT_CONFIG[statut];
     const st = document.getElementById('modal-subtitle');
     if (st) st.innerHTML = `<span class="badge badge-${escHtml(s.cls)}">${escHtml(s.label)}</span> &nbsp; ${escHtml(d.pays)} &nbsp; · &nbsp; ${escHtml(d.dates || 'Projet futur')}`;
   }
-  showToast('🗂️ Catégorie : ' + STATUT_CONFIG[statut].label);
+  showToast('🗂️ ' + STATUT_CONFIG[statut].label);
 }
 
 function nightsOf(d) {
@@ -964,14 +981,14 @@ function archiveTrip(id) {
   const a = getArchivedIds();
   if (!a.includes(id)) { a.push(id); setArchivedIds(a); }
   setPinnedIds(getPinnedIds().filter(x => x !== id));
-  buildPinned();
+  buildPinned(); buildDashboard(); buildBudget(); renderDestGrid();
   if (currentPage === 'archives') buildArchives();
   showToast('🗄️ Voyage archivé');
 }
 function unarchiveTrip(id) {
   setArchivedIds(getArchivedIds().filter(x => x !== id));
   buildArchives();
-  buildPinned();
+  buildPinned(); buildDashboard(); buildBudget(); renderDestGrid();
   showToast('📤 Voyage désarchivé');
 }
 
@@ -1005,50 +1022,142 @@ function buildArchives() {
 }
 
 // ── DASHBOARD ──────────────────────────────────────────
-function buildDashboard() {
-  // TODO list Crète
-  const todos = [
-    { done: false, text: 'Excursion Gorges de Samaria — agence face hôtel dès J1', urgent: true },
-    { done: false, text: 'Taverne Koutouloufari — réserver J5 soir (surprise )', urgent: true },
-    { done: false, text: 'Knossos (e-ticketing.culture.gov.gr) — ~16€/pers', urgent: false },
-    { done: false, text: 'CEAM ×2 — ameli.fr (3 semaines avant)', urgent: false },
-    { done: true,  text: 'Package TUI payé (1 950€)', urgent: false },
-    { done: true,  text: 'Croisière île de Dia — 15h00 port Héraklion ✅', urgent: false },
-    { done: false, text: 'Google Maps Crète hors-ligne sur les 2 téléphones', urgent: false },
-    { done: false, text: 'Location voiture — agence face hôtel (J2 + J5)', urgent: false },
-  ];
-  const key = 'todos_crete';
-  let saved = JSON.parse(localStorage.getItem(key) || 'null');
-  if(!saved) saved = todos.map(t => t.done);
-  const el = document.getElementById('todo-list');
-  el.innerHTML = todos.map((t, i) => `
-    <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-      <input type="checkbox" ${saved[i] ? 'checked' : ''} onchange="saveTodo(${i},this.checked,'${key}')"
-        style="margin-top:3px;accent-color:var(--green);cursor:pointer">
-      <span style="font-size:.82rem;${saved[i] ? 'text-decoration:line-through;color:var(--muted)' : ''};flex:1">${t.text}</span>
-      ${t.urgent && !saved[i] ? '<span style="font-size:.7rem;color:var(--red);font-weight:700">URGENT</span>' : ''}
-    </div>
-  `).join('');
+// Voyage prioritaire qui pilote les panneaux « À faire » et « Programme »
+function getPrimaryDest() {
+  const today = new Date().toISOString().slice(0, 10);
+  const archived = new Set(getArchivedIds());
+  const active = DESTINATIONS.filter(d => !archived.has(d.id));
+  const isFinished = d => d.statut === 'confirme' && d.date_retour && d.date_retour < today;
+  // 1. Voyage confirmé en cours ou à venir
+  let c = active.filter(d => d.statut === 'confirme' && (!d.date_retour || d.date_retour >= today))
+                .sort((a, b) => (a.date_depart || '').localeCompare(b.date_depart || ''));
+  if (c.length) return c[0];
+  // 2. Premier voyage épinglé non terminé (l'utilisateur pilote via l'épinglage)
+  for (const id of getPinnedIds()) { const d = DESTINATIONS.find(x => x.id === id); if (d && !isFinished(d)) return d; }
+  // 3. Prochain voyage daté à venir
+  c = active.filter(d => d.date_depart && d.date_depart >= today).sort((a, b) => a.date_depart.localeCompare(b.date_depart));
+  if (c.length) return c[0];
+  // 4. Première destination en planification
+  c = active.filter(d => d.statut === 'planification');
+  if (c.length) return c[0];
+  // 5. Repli
+  const pinned = getPinnedIds();
+  if (pinned.length) { const d = DESTINATIONS.find(x => x.id === pinned[0]); if (d) return d; }
+  return active[0] || null;
+}
 
-  // Mini timeline
-  const days = [
-    { emoji: '✈️', label: 'J1 — Lundi 6 juillet', title: 'Départ CDG + Arrivée', items: ['Vol CDG 07:50 → HER', 'Transfer TUI → hôtel', 'Check-in · Piscine · Premier dîner AI'] },
-    { emoji: '🏛️', label: 'J2 — Mardi 7 juillet', title: 'Knossos + Malia + Héraklion', items: ['Location voiture matin', 'Ruines de Malia (6€/pers)', 'Palais de Knossos (16€/pers)', 'Marché 1866 + vieille ville'] },
-    { emoji: '⛵', label: 'J3 — Mercredi 8 juillet', title: '🎁 Surprise — Croisière île de Dia', items: ['Matin libre piscine/plage', 'Départ 13:15 → port Héraklion', '15h00 : Embarquement île de Dia 🎉', 'Retour ~22h10'] },
-    { emoji: '🌿', label: 'J4 — Jeudi 9 juillet', title: 'Gorges de Samaria (16 km)', items: ['Réveil 06:30 ⚠️', 'Bus excursion 07:00', 'Descente gorges 09:00→13:30', 'Ferry Agia Roumeli → Hora Sfakion'] },
-    { emoji: '🏝️', label: 'J5 — Vendredi 10 juillet', title: 'Est Crète + 🎁 Dîner Koutouloufari', items: ['Location voiture', 'Bateau Elounda → Spinalonga', 'Agios Nikolaos + lac Voulismeni', '20h : Surprise dîner romantique'] },
-    { emoji: '🏠', label: 'J6 — Samedi 11 juillet', title: 'Retour Paris CDG', items: ['Dernier petit-déjeuner AI', 'Check-out 10:30', 'Transfer TUI → HER', 'Vol HER 13:20 → CDG'] },
-  ];
-  document.getElementById('mini-timeline').innerHTML = days.map(d => `
-    <div class="timeline-day">
-      <div class="timeline-dot">${d.emoji}</div>
-      <div class="timeline-content">
-        <div class="timeline-day-label">${d.label}</div>
-        <div class="timeline-title">${d.title}</div>
-        <div class="timeline-items">${d.items.map(i => `<div class="timeline-item">${i}</div>`).join('')}</div>
-      </div>
-    </div>
-  `).join('');
+// Checklist générée pour un voyage (quand pas de liste dédiée)
+function genericTodos(dest) {
+  const trip = (typeof getTripByDestination === 'function') ? getTripByDestination(dest.id) : null;
+  const out = [];
+  if (trip) {
+    const trOk = trip.transport && (trip.transport.status === 'confirme' || trip.transport.status === 'paye');
+    const hbOk = trip.hebergement && (trip.hebergement.status === 'confirme' || trip.hebergement.status === 'paye');
+    out.push({ done: trOk, text: 'Réserver le transport' + (dest.vol_prix ? ' (' + dest.vol_prix + ')' : ''), urgent: !trOk });
+    out.push({ done: hbOk, text: 'Réserver l\'hébergement' + (dest.logement ? ' — ' + dest.logement.split('—')[0].trim() : ''), urgent: !hbOk });
+    (trip.activites || []).filter(a => a.status === 'prevue').slice(0, 3).forEach(a => out.push({ done: false, text: 'Réserver / caler : ' + a.nom, urgent: false }));
+  } else {
+    out.push({ done: false, text: 'Réserver le transport' + (dest.vol_prix ? ' (' + dest.vol_prix + ')' : ''), urgent: true });
+    out.push({ done: false, text: 'Réserver l\'hébergement', urgent: true });
+    (dest.pois || []).slice(0, 3).forEach(p => out.push({ done: false, text: 'Prévoir : ' + p.nom, urgent: false }));
+  }
+  const eu = (typeof CONTINENT_MAP !== 'undefined') && CONTINENT_MAP[dest.pays] === 'Europe';
+  out.push({ done: false, text: eu ? 'Commander la CEAM ×2 (ameli.fr)' : 'Souscrire une assurance voyage', urgent: false });
+  out.push({ done: false, text: 'Vérifier passeport / CNI valides (2 pers.)', urgent: false });
+  out.push({ done: false, text: 'Cartes Google Maps hors-ligne', urgent: false });
+  out.push({ done: false, text: 'Préparer la valise', urgent: false });
+  return out;
+}
+
+// Programme (timeline) d'un voyage : preset d'agenda, sinon liste des lieux
+function buildProgrammeDays(dest) {
+  const preset = (typeof AGENDA_PRESETS !== 'undefined') && AGENDA_PRESETS[dest.id];
+  if (preset && preset.blocks && preset.blocks.length) {
+    const byDay = {};
+    preset.blocks.forEach(b => { (byDay[b.d] = byDay[b.d] || []).push(b); });
+    return Object.keys(byDay).map(Number).sort((a, b) => a - b).map(dn => {
+      const blocks = byDay[dn].sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
+      return { emoji: blocks[0].emoji || '📅', label: 'J' + (dn + 1), title: blocks[0].label, items: blocks.slice(0, 4).map(b => b.label) };
+    });
+  }
+  if (dest.pois && dest.pois.length) {
+    return [{ emoji: dest.emoji || '📍', label: 'À voir', title: dest.nom.split('—')[0].trim(), items: dest.pois.slice(0, 6).map(p => p.nom) }];
+  }
+  return null;
+}
+
+// Listes dédiées Crète (voyage confirmé emblématique)
+const CRETE_TODOS = [
+  { done: false, text: 'Excursion Gorges de Samaria — agence face hôtel dès J1', urgent: true },
+  { done: false, text: 'Taverne Koutouloufari — réserver J5 soir (surprise )', urgent: true },
+  { done: false, text: 'Knossos (e-ticketing.culture.gov.gr) — ~16€/pers', urgent: false },
+  { done: false, text: 'CEAM ×2 — ameli.fr (3 semaines avant)', urgent: false },
+  { done: true,  text: 'Package TUI payé (1 950€)', urgent: false },
+  { done: true,  text: 'Croisière île de Dia — 15h00 port Héraklion ✅', urgent: false },
+  { done: false, text: 'Google Maps Crète hors-ligne sur les 2 téléphones', urgent: false },
+  { done: false, text: 'Location voiture — agence face hôtel (J2 + J5)', urgent: false },
+];
+const CRETE_DAYS = [
+  { emoji: '✈️', label: 'J1 — Lundi 6 juillet', title: 'Départ CDG + Arrivée', items: ['Vol CDG 07:50 → HER', 'Transfer TUI → hôtel', 'Check-in · Piscine · Premier dîner AI'] },
+  { emoji: '🏛️', label: 'J2 — Mardi 7 juillet', title: 'Knossos + Malia + Héraklion', items: ['Location voiture matin', 'Ruines de Malia (6€/pers)', 'Palais de Knossos (16€/pers)', 'Marché 1866 + vieille ville'] },
+  { emoji: '⛵', label: 'J3 — Mercredi 8 juillet', title: '🎁 Surprise — Croisière île de Dia', items: ['Matin libre piscine/plage', 'Départ 13:15 → port Héraklion', '15h00 : Embarquement île de Dia 🎉', 'Retour ~22h10'] },
+  { emoji: '🌿', label: 'J4 — Jeudi 9 juillet', title: 'Gorges de Samaria (16 km)', items: ['Réveil 06:30 ⚠️', 'Bus excursion 07:00', 'Descente gorges 09:00→13:30', 'Ferry Agia Roumeli → Hora Sfakion'] },
+  { emoji: '🏝️', label: 'J5 — Vendredi 10 juillet', title: 'Est Crète + 🎁 Dîner Koutouloufari', items: ['Location voiture', 'Bateau Elounda → Spinalonga', 'Agios Nikolaos + lac Voulismeni', '20h : Surprise dîner romantique'] },
+  { emoji: '🏠', label: 'J6 — Samedi 11 juillet', title: 'Retour Paris CDG', items: ['Dernier petit-déjeuner AI', 'Check-out 10:30', 'Transfer TUI → HER', 'Vol HER 13:20 → CDG'] },
+];
+
+function buildDashboard() {
+  // Stats globales dynamiques (hors voyages archivés)
+  const archivedForStats = new Set(getArchivedIds());
+  const statCounts = { confirme: 0, planification: 0, projet: 0, projet_longterme: 0 };
+  DESTINATIONS.forEach(d => { if (statCounts[d.statut] != null && !archivedForStats.has(d.id)) statCounts[d.statut]++; });
+  Object.keys(statCounts).forEach(k => { const el = document.getElementById('stat-' + k); if (el) el.textContent = statCounts[k]; });
+
+  // ── Panneaux dynamiques pilotés par le voyage prioritaire ──
+  const primary = getPrimaryDest();
+  const shortName = primary ? primary.nom.split('—')[0].trim() : '';
+  const todoTitleEl = document.getElementById('todo-title');
+  const progTitleEl = document.getElementById('programme-title');
+  const el = document.getElementById('todo-list');
+  const timelineEl = document.getElementById('mini-timeline');
+
+  if (!primary) {
+    if (todoTitleEl) todoTitleEl.textContent = '🔴 À faire avant ton prochain voyage';
+    if (progTitleEl) progTitleEl.textContent = '📅 Programme';
+    if (el) el.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Aucun voyage actif. Épingle ou confirme un voyage pour voir ta checklist ici.</p>';
+    if (timelineEl) timelineEl.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Aucun programme pour le moment.</p>';
+  } else {
+    if (todoTitleEl) todoTitleEl.textContent = '🔴 À faire AVANT ' + shortName;
+    if (progTitleEl) progTitleEl.textContent = (primary.statut === 'confirme' ? '📅 Voyage confirmé — ' : '📅 Programme — ') + shortName;
+
+    const todos = (primary.id === 'heraklion') ? CRETE_TODOS : genericTodos(primary);
+    const key = 'todos_' + primary.id;
+    let saved = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!saved || saved.length !== todos.length) saved = todos.map(t => t.done);
+    el.innerHTML = todos.map((t, i) => `
+      <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <input type="checkbox" ${saved[i] ? 'checked' : ''} onchange="saveTodo(${i},this.checked,'${key}')"
+          style="margin-top:3px;accent-color:var(--green);cursor:pointer">
+        <span style="font-size:.82rem;${saved[i] ? 'text-decoration:line-through;color:var(--muted)' : ''};flex:1">${escHtml(t.text)}</span>
+        ${t.urgent && !saved[i] ? '<span style="font-size:.7rem;color:var(--red);font-weight:700">URGENT</span>' : ''}
+      </div>`).join('');
+
+    const days = (primary.id === 'heraklion') ? CRETE_DAYS : buildProgrammeDays(primary);
+    if (days && days.length) {
+      timelineEl.innerHTML = days.map(d => `
+        <div class="timeline-day">
+          <div class="timeline-dot">${d.emoji}</div>
+          <div class="timeline-content">
+            <div class="timeline-day-label">${escHtml(d.label)}</div>
+            <div class="timeline-title">${escHtml(d.title)}</div>
+            <div class="timeline-items">${d.items.map(i => `<div class="timeline-item">${escHtml(i)}</div>`).join('')}</div>
+          </div>
+        </div>`).join('');
+    } else {
+      timelineEl.innerHTML = `<p style="color:var(--muted);font-size:.85rem">Pas encore de programme pour ${escHtml(shortName)}.
+        <button class="btn btn-outline btn-sm" onclick="showPage('agenda')" style="margin-left:6px">📆 Créer l'agenda</button></p>`;
+    }
+  }
 
   // Active destinations — avec bouton retrait
   const hiddenPlanif = new Set(JSON.parse(localStorage.getItem('vm_hidden_planif') || '[]'));
@@ -1260,6 +1369,7 @@ function openDest(id) {
       <label>🗂️ Catégorie</label>
       <select class="cat-select" onchange="setDestStatut('${escHtml(d.id)}', this.value)" aria-label="Changer la catégorie du voyage">
         ${Object.keys(STATUT_CONFIG).map(k => `<option value="${k}"${d.statut === k ? ' selected' : ''}>${STATUT_CONFIG[k].label}</option>`).join('')}
+        <option value="aucun">➖ Retirer du suivi (archiver)</option>
       </select>
       <button class="btn btn-primary btn-sm" onclick="openPinnedTrip('${escHtml(d.id)}')" style="margin-left:auto">🧭 Préparation &amp; suivi</button>
     </div>
