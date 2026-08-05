@@ -3,8 +3,8 @@
 // Script CLASSIQUE (globals) → fonctionne en file:// comme en http.
 // Dépend de model.js (chargé avant) : tripFromDestination, computeTripProgress
 // ============================================================
-const STORAGE_KEY = 'vm_store_v1';
-const STORE_SCHEMA_VERSION = 2;
+const STORAGE_KEY = 'vm_store_v2';
+const STORE_SCHEMA_VERSION = 3;
 
 const storeState = { version: STORE_SCHEMA_VERSION, trips: [], userDestinations: [], userActivities: [] };
 let _storeLoaded = false;
@@ -92,15 +92,7 @@ function loadStore() {
 }
 
 function _storeSeed() {
-  const cat = window.DESTINATIONS || [];
-  const seedStatuts = ['confirme', 'planification'];
-  storeState.trips = cat.filter(d => seedStatuts.includes(d.statut)).map(d => tripFromDestination(d));
-  try {
-    const oldValises = JSON.parse(localStorage.getItem('voyagemanager_valises') || '{}');
-    const oldAgenda = JSON.parse(localStorage.getItem('voyagemanager_agenda') || '{}');
-    storeState.trips.forEach(t => {
-      t.hasValise = !!oldValises[t.destinationId];
-      t.hasAgenda = !!(oldAgenda[t.destinationId] && (oldAgenda[t.destinationId].blocks || []).length);
-    });
-  } catch (e) { /* ignore */ }
+  // Site vierge : aucun voyage pré-créé. L'utilisateur crée ses propres voyages
+  // depuis les destinations (bouton « Créer un voyage »).
+  storeState.trips = [];
 }

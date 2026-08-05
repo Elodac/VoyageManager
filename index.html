@@ -674,7 +674,7 @@ function setArchivedIds(a) { lsSafe(ARCHIVED_KEY, a); }
 function getPinnedIds() {
   let ids;
   try { ids = JSON.parse(localStorage.getItem(PINNED_KEY)); } catch(e) {}
-  if (!Array.isArray(ids)) ids = ['heraklion']; // défaut : la Crète confirmée
+  if (!Array.isArray(ids)) ids = []; // site vierge : rien d'épinglé par défaut
   const archived = getArchivedIds();
   return ids.filter(id => (window.DESTINATIONS||[]).some(d => d.id === id) && !archived.includes(id));
 }
@@ -1161,26 +1161,6 @@ function buildProgrammeDays(dest) {
   return null;
 }
 
-// Listes dédiées Crète (voyage confirmé emblématique)
-const CRETE_TODOS = [
-  { done: false, text: 'Excursion Gorges de Samaria — agence face hôtel dès J1', urgent: true },
-  { done: false, text: 'Taverne Koutouloufari — réserver J5 soir (surprise )', urgent: true },
-  { done: false, text: 'Knossos (e-ticketing.culture.gov.gr) — ~16€/pers', urgent: false },
-  { done: false, text: 'CEAM ×2 — ameli.fr (3 semaines avant)', urgent: false },
-  { done: true,  text: 'Package TUI payé (1 950€)', urgent: false },
-  { done: true,  text: 'Croisière île de Dia — 15h00 port Héraklion ✅', urgent: false },
-  { done: false, text: 'Google Maps Crète hors-ligne sur les 2 téléphones', urgent: false },
-  { done: false, text: 'Location voiture — agence face hôtel (J2 + J5)', urgent: false },
-];
-const CRETE_DAYS = [
-  { emoji: '✈️', label: 'J1 — Lundi 6 juillet', title: 'Départ CDG + Arrivée', items: ['Vol CDG 07:50 → HER', 'Transfer TUI → hôtel', 'Check-in · Piscine · Premier dîner AI'] },
-  { emoji: '🏛️', label: 'J2 — Mardi 7 juillet', title: 'Knossos + Malia + Héraklion', items: ['Location voiture matin', 'Ruines de Malia (6€/pers)', 'Palais de Knossos (16€/pers)', 'Marché 1866 + vieille ville'] },
-  { emoji: '⛵', label: 'J3 — Mercredi 8 juillet', title: '🎁 Surprise — Croisière île de Dia', items: ['Matin libre piscine/plage', 'Départ 13:15 → port Héraklion', '15h00 : Embarquement île de Dia 🎉', 'Retour ~22h10'] },
-  { emoji: '🌿', label: 'J4 — Jeudi 9 juillet', title: 'Gorges de Samaria (16 km)', items: ['Réveil 06:30 ⚠️', 'Bus excursion 07:00', 'Descente gorges 09:00→13:30', 'Ferry Agia Roumeli → Hora Sfakion'] },
-  { emoji: '🏝️', label: 'J5 — Vendredi 10 juillet', title: 'Est Crète + 🎁 Dîner Koutouloufari', items: ['Location voiture', 'Bateau Elounda → Spinalonga', 'Agios Nikolaos + lac Voulismeni', '20h : Surprise dîner romantique'] },
-  { emoji: '🏠', label: 'J6 — Samedi 11 juillet', title: 'Retour Paris CDG', items: ['Dernier petit-déjeuner AI', 'Check-out 10:30', 'Transfer TUI → HER', 'Vol HER 13:20 → CDG'] },
-];
-
 function buildDashboard() {
   // Stats globales dynamiques (hors voyages archivés)
   const archivedForStats = new Set(getArchivedIds());
@@ -1210,7 +1190,7 @@ function buildDashboard() {
     // Titres cliquables → ouvrir/modifier le voyage
     [todoTitleEl, progTitleEl].forEach(elt => { if (elt) { elt.style.cursor = 'pointer'; elt.title = 'Ouvrir / modifier ce voyage'; elt.classList.add('clickable-title'); elt.onclick = () => openDest(primary.id); } });
 
-    const todos = (primary.id === 'heraklion') ? CRETE_TODOS : genericTodos(primary);
+    const todos = genericTodos(primary);
     const key = 'todos_' + primary.id;
     let saved = JSON.parse(localStorage.getItem(key) || 'null');
     if (!saved || saved.length !== todos.length) saved = todos.map(t => t.done);
@@ -1222,7 +1202,7 @@ function buildDashboard() {
         ${t.urgent && !saved[i] ? '<span style="font-size:.7rem;color:var(--red);font-weight:700">URGENT</span>' : ''}
       </div>`).join('');
 
-    const days = (primary.id === 'heraklion') ? CRETE_DAYS : buildProgrammeDays(primary);
+    const days = buildProgrammeDays(primary);
     if (days && days.length) {
       timelineEl.innerHTML = days.map(d => `
         <div class="timeline-day">
@@ -3232,7 +3212,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputImport = document.getElementById('input-import-json');
   if (btnExport) {
     btnExport.addEventListener('click', () => {
-      const KEYS = ['vm_store_v1', 'voyagemanager_valises', 'voyagemanager_agenda', TRACKER_KEY];
+      const KEYS = ['vm_store_v2', 'voyagemanager_valises', 'voyagemanager_agenda', TRACKER_KEY];
       const snapshot = { _vmVersion: 3, _exported: new Date().toISOString() };
       KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) try { snapshot[k] = JSON.parse(v); } catch(e) {} });
       const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
@@ -3256,7 +3236,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Format invalide');
           const ver = data._vmVersion || 1;
           if (!confirm(`Importer la sauvegarde du ${data._exported ? data._exported.slice(0,10) : '?'} (version ${ver}) ? Les données actuelles seront écrasées.`)) return;
-          const VALID_KEYS = new Set(['vm_store_v1','voyagemanager_valises','voyagemanager_agenda', TRACKER_KEY]);
+          const VALID_KEYS = new Set(['vm_store_v2','vm_store_v1','voyagemanager_valises','voyagemanager_agenda', TRACKER_KEY]);
           let imported = 0;
           Object.entries(data).forEach(([k, v]) => {
             if(VALID_KEYS.has(k)) { localStorage.setItem(k, JSON.stringify(v)); imported++; }

@@ -21,6 +21,7 @@ function tripCardHTML(t) {
   const dates = t.date_depart ? `${t.date_depart} → ${t.date_retour || '?'}` : 'Dates à définir';
   return `
     <div class="trip-card" data-trip="${t.id}">
+      <button class="trip-del" data-del-trip-card="${t.id}" title="Supprimer ce voyage" aria-label="Supprimer ce voyage">✕</button>
       <div class="trip-card-top">
         <span class="trip-emoji">${t.emoji || '✈️'}</span>
         <div class="trip-card-head">
@@ -328,6 +329,17 @@ function init() {
   const mount = document.getElementById('trips-mount');
   if (mount) {
     mount.addEventListener('click', e => {
+      const del = e.target.closest('[data-del-trip-card]');
+      if (del) {
+        e.stopPropagation();
+        const id = del.dataset.delTripCard;
+        const t = getTrip(id);
+        if (t && confirm(`Supprimer le voyage « ${t.nom} » ?`)) {
+          removeTrip(id);
+          window.showToast && window.showToast('🗑️ Voyage supprimé.');
+        }
+        return;
+      }
       const card = e.target.closest('[data-trip]');
       if (card) openTripModal(card.dataset.trip);
     });
