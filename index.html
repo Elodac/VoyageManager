@@ -1433,6 +1433,18 @@ function restoreFilters() {
   if (s) { currentSort = s; const sel = document.getElementById('sort-select'); if (sel) sel.value = s; }
 }
 
+// Rend une liste titrée (bons plans / logement / à savoir / risques)
+function ficheList(title, items, tone) {
+  if (!items || !items.length) return '';
+  const col = tone === 'warn' ? '#ef4444' : tone === 'ok' ? '#22c55e' : 'var(--accent)';
+  return `<div style="margin-bottom:16px">
+    <h3 style="font-size:.85rem;font-weight:600;margin-bottom:8px">${title}</h3>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${items.map(t => `<div style="font-size:.83rem;line-height:1.45;border-left:3px solid ${col};padding:4px 0 4px 10px">${escHtml(typeof t === 'string' ? t : (t.text || ''))}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
 // ── MODAL DESTINATION ──────────────────────────────────
 function openDest(id) {
   currentDest = DESTINATIONS.find(d => d.id === id);
@@ -1485,6 +1497,10 @@ function openDest(id) {
       <div style="font-size:1.2rem;font-weight:700;color:var(--green)">${d.budget_min}€ – ${d.budget_max}€ <span style="font-size:.8rem;color:var(--muted);font-weight:400">pour 2 personnes</span></div>
     </div>` : ''}
     ${currencyBlock(d.pays)}
+    ${ficheList('💡 Bons plans', d.bons_plans, 'ok')}
+    ${ficheList('🏨 Où loger', d.logements)}
+    ${ficheList('📌 Bon à savoir', d.a_savoir)}
+    ${ficheList('⚠️ Risques & vigilance', d.risques, 'warn')}
     ${d.urgences ? `
     <div style="margin-bottom:16px">
       <h3 style="font-size:.85rem;font-weight:600;margin-bottom:8px">🚨 Urgences</h3>
