@@ -17,21 +17,24 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 </head>
 <body>
 
-<nav>
+<nav id="main-nav">
   <div class="nav-brand">✈️ <span>Voyage</span>Manager</div>
-  <button class="nav-btn active" onclick="showPage('dashboard')">🏠 Dashboard</button>
-  <button class="nav-btn" onclick="showPage('destinations')">🗺️ Destinations</button>
-  <button class="nav-btn" onclick="showPage('carte')">📍 Carte</button>
-  <button class="nav-btn" onclick="showPage('agenda')">📆 Agenda</button>
-  <button class="nav-btn" onclick="showPage('programmes')">🧠 Programmes</button>
-  <button class="nav-btn" onclick="showPage('transport')">🚆 Transport</button>
-  <button class="nav-btn" onclick="showPage('recherche')">🔍 Recherche</button>
-  <button class="nav-btn" onclick="showPage('valises')">🧳 Valises</button>
-  <button class="nav-btn" onclick="showPage('budget')">💶 Budget</button>
-  <button class="nav-btn" onclick="showPage('archives')">🗄️ Archives</button>
-  <button class="nav-btn" onclick="showPage('ajouter')">➕ Ajouter</button>
+  <button class="nav-burger" onclick="toggleNav()" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+  <div class="nav-links" id="nav-links">
+    <button class="nav-btn active" onclick="showPage('dashboard')">🏠 Dashboard</button>
+    <button class="nav-btn" onclick="showPage('destinations')">🗺️ Destinations</button>
+    <button class="nav-btn" onclick="showPage('carte')">📍 Carte</button>
+    <button class="nav-btn" onclick="showPage('agenda')">📆 Agenda</button>
+    <button class="nav-btn" onclick="showPage('programmes')">🧠 Programmes</button>
+    <button class="nav-btn" onclick="showPage('transport')">🚆 Transport</button>
+    <button class="nav-btn" onclick="showPage('recherche')">🔍 Recherche</button>
+    <button class="nav-btn" onclick="showPage('valises')">🧳 Valises</button>
+    <button class="nav-btn" onclick="showPage('budget')">💶 Budget</button>
+    <button class="nav-btn" onclick="showPage('archives')">🗄️ Archives</button>
+    <button class="nav-btn" onclick="showPage('ajouter')">➕ Ajouter</button>
+  </div>
   <div class="nav-spacer"></div>
-  <span class="nav-badge" id="nav-badge">Crète · 6 juillet 2026</span>
+  <span class="nav-badge" id="nav-badge"></span>
 </nav>
 
 <main>
@@ -664,7 +667,17 @@ function matchAdvFilter(d) {
 }
 
 // ── NAVIGATION ─────────────────────────────────────────
+function toggleNav() {
+  const nav = document.getElementById('main-nav');
+  if (!nav) return;
+  const open = nav.classList.toggle('nav-open');
+  const b = nav.querySelector('.nav-burger');
+  if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
 function showPage(id) {
+  const nav = document.getElementById('main-nav');
+  if (nav) { nav.classList.remove('nav-open'); const b = nav.querySelector('.nav-burger'); if (b) b.setAttribute('aria-expanded', 'false'); }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');

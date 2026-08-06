@@ -18,6 +18,9 @@ nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;d
 .nav-btn.active{background:var(--accent);color:#fff}
 .nav-spacer{flex:1}
 .nav-badge{background:var(--green);color:#000;border-radius:99px;padding:2px 9px;font-size:.75rem;font-weight:700}
+.nav-badge:empty{display:none}
+.nav-links{display:contents}
+.nav-burger{display:none;background:transparent;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;padding:2px 8px;line-height:1}
 
 /* ── MAIN ──────────────────────────────────────────── */
 main{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%}
@@ -434,11 +437,14 @@ body:has(#page-transport.active) main{max-width:1600px}
 
 /* ── RESPONSIVE MOBILE ─────────────────────────────── */
 @media(max-width:640px){
-  /* Navigation défilante */
-  nav{padding:0 10px;gap:4px;overflow-x:auto;scrollbar-width:none}
-  nav::-webkit-scrollbar{display:none}
-  .nav-brand{font-size:.85rem;margin-right:6px}
-  .nav-btn{padding:5px 9px;font-size:.78rem;white-space:nowrap}
+  /* Navigation : menu burger */
+  nav{padding:0 12px;gap:6px;overflow:visible}
+  .nav-brand{font-size:.9rem;margin-right:6px}
+  .nav-burger{display:block;margin-left:auto}
+  .nav-badge{display:none}
+  .nav-links{display:none;position:fixed;top:58px;left:0;right:0;flex-direction:column;gap:2px;background:var(--bg2);border-bottom:1px solid var(--border);padding:8px;max-height:82vh;overflow-y:auto;z-index:99;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+  #main-nav.nav-open .nav-links{display:flex}
+  .nav-links .nav-btn{width:100%;text-align:left;padding:11px 14px;font-size:.92rem}
 
   /* Contenu principal */
   main{padding:14px 10px}
