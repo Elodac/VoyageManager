@@ -481,6 +481,10 @@ const DESTINATIONS = [
   // ── PROJETS FUTURS EUROPE ─────────────────────────────────
   {
     id: "athenes",
+    bons_plans: ["Billet combiné ~30€ pour 7 sites antiques", "Acropole tôt le matin (7h30-9h) ou en fin de journée", "Métro récent (ligne 3 directe depuis l'aéroport)", "Souvlaki à Monastiraki : repas complet < 8€", "Coucher de soleil gratuit sur la colline de Philopappou ou le Lycabette"],
+    logements: ["Appartement Koukaki / Monastiraki — 52-81€/nuit", "Koukaki : calme, sous l'Acropole, tendance", "Plaka : charmant mais touristique", "Monastiraki / Psiri : vie nocturne"],
+    a_savoir: ["Chaleur extrême l'été (35-40°C)", "Beaucoup de marches et de pavés", "Pourboire arrondi apprécié", "Composter les tickets de métro"],
+    risques: ["Pickpockets dans le métro (ligne aéroport) et à Monastiraki", "Éviter l'Acropole à midi l'été", "Taxis : exiger le compteur", "Manifestations possibles à Syntagma"],
     nom: "Athènes",
     pays: "Grèce",
     emoji: "🏛️",
@@ -540,6 +544,10 @@ const DESTINATIONS = [
   },
   {
     id: "berlin",
+    bons_plans: ["Berlin WelcomeCard : transports + réductions musées", "Dôme du Reichstag gratuit (réserver en ligne à l'avance)", "Museum Pass Berlin : 5 musées, bien moins cher", "Street Food Thursday à Markthalle Neun", "Free walking tours (au pourboire) pour l'histoire du Mur"],
+    logements: ["Appartement Friedrichshain / Kreuzberg — 65-100€/nuit", "Mitte : central, proche musées", "Prenzlauer Berg : familial et branché", "Neukölln : jeune, abordable, vie nocturne"],
+    a_savoir: ["Ville très étendue : U-Bahn + S-Bahn indispensables", "Prévoir des espèces (cartes pas acceptées partout)", "Dimanche : commerces fermés, marchés aux puces ouverts", "Anglais très répandu"],
+    risques: ["Pickpockets à Alexanderplatz et dans le U-Bahn", "Ne pas marcher sur les pistes cyclables (vélos rapides)", "Clubs très sélectifs (Berghain) : pas de photos", "Hiver rigoureux, nuits longues"],
     nom: "Berlin",
     pays: "Allemagne",
     emoji: "🐻",
@@ -755,6 +763,10 @@ const DESTINATIONS = [
   },
   {
     id: "stockholm",
+    bons_plans: ["Stockholm Pass : 60 attractions + transports", "Ferries de l'archipel avec la carte SL", "Fika (pause café-brioche) dans les boulangeries locales", "Certains musées gratuits (Médiéval, Hallwyl)", "Halles Östermalm & Söderhallarna pour manger sans se ruiner"],
+    logements: ["Appartement Södermalm / Östermalm — 100-150€/nuit", "Södermalm : design, vintage, points de vue", "Gamla Stan : central mais touristique", "Auberges sur Långholmen (ancienne prison)"],
+    a_savoir: ["Tout se paie par carte/téléphone (cash rare)", "Été = nuits blanches, hiver = jours très courts", "Anglais parfaitement parlé", "Ville chère : budget 120-180€/j/pers"],
+    risques: ["Prix très élevés", "Alcool : monopole Systembolaget (fermé le soir/dimanche)", "Hiver sombre et glissant", "Archipel : vérifier la météo pour les ferries"],
     nom: "Stockholm",
     pays: "Suède",
     emoji: "👑",
@@ -1012,6 +1024,10 @@ const DESTINATIONS = [
   },
   {
     id: "dublin",
+    bons_plans: ["Leap Card pour bus / DART / Luas", "Musées nationaux gratuits (archéologie, histoire naturelle)", "Kilmainham Gaol : réserver à minuit, 28 j. avant", "Trad sessions gratuites au Cobblestone (Smithfield)", "Guinness meilleure et moins chère hors de Temple Bar"],
+    logements: ["Appartement Temple Bar / Portobello — 90-130€/nuit", "Portobello / Rathmines : calme et proche du centre", "Éviter Temple Bar la nuit (bruyant et cher)", "Auberges de Smithfield pour petits budgets"],
+    a_savoir: ["Conduite à gauche", "Météo changeante : imperméable toute l'année", "Ville chère : 70-100€/j/pers hors logement", "Anglais (et gaélique sur les panneaux)"],
+    risques: ["Pluie fréquente", "Alcool cher (pinte ~7€)", "Réserver Book of Kells & Kilmainham à l'avance", "Quartiers nord de la Liffey plus populaires la nuit"],
     nom: "Dublin",
     pays: "Irlande",
     emoji: "🍺",
@@ -1455,6 +1471,10 @@ const DESTINATIONS = [
   },
   {
     id: "bordeaux",
+    bons_plans: ["Tramway A/B/C pour tout le centre sans voiture", "Miroir d'eau gratuit (avril-octobre)", "Huîtres chez un producteur (Le Canon, Cap Ferret)", "Bordeaux City Pass (transports + musées + visites)", "Marché des Capucins le week-end pour manger local"],
+    logements: ["Appartement Saint-Pierre / Chartrons — 70-120€/nuit", "Saint-Pierre : cœur historique piéton", "Chartrons : bars à vin, antiquaires", "TGV + tram : idéale sans voiture"],
+    a_savoir: ["TGV Paris-Bordeaux en 2h", "Dune du Pilat à 1h (voiture conseillée)", "Saint-Émilion accessible en TER", "Modération : nombreuses dégustations"],
+    risques: ["Dune du Pilat : plein soleil, peu d'ombre", "Circulation et parking difficiles en hyper-centre", "Bassin d'Arcachon bondé l'été", "Marées : vérifier pour huîtres et plages"],
     nom: "Bordeaux & Dune du Pilat",
     pays: "France",
     emoji: "🍷",
@@ -2794,6 +2814,10 @@ const DESTINATIONS = [
   // ══════════════════════════════════════════════════════════
   {
     id: "vienne",
+    bons_plans: ["Sisi Ticket (Schönbrunn + Hofburg) ou Vienna City Card", "Naschmarkt le samedi (marché aux puces)", "Places d'opéra debout dès 3-4€ (Staatsoper)", "Un café historique = rester des heures pour le prix d'un Melange", "Heuriger (guinguettes à vin) à Grinzing en périphérie"],
+    logements: ["Appartement 1er/4e arrondissement — 80-140€/nuit", "Innere Stadt (1er) : central et impérial", "Neubau (7e) : branché, boutiques, cafés", "Très bien desservi par le U-Bahn"],
+    a_savoir: ["U-Bahn efficace, centre marchable", "Pourboire ~5-10 % au café/resto", "Dimanche : commerces fermés", "Réserver l'opéra et Schönbrunn à l'avance"],
+    risques: ["Affluence à Schönbrunn (venir tôt)", "Vendeurs de « concerts Mozart » en costume : arnaques", "Pièges à touristes autour du Stephansdom", "Hiver froid"],
     nom: "Vienne (Wien)",
     pays: "Autriche",
     emoji: "🎼",
@@ -3013,6 +3037,10 @@ const DESTINATIONS = [
   // ══════════════════════════════════════════════════════════
   {
     id: "sydney",
+    bons_plans: ["Opal Card plafonnée (bus, train, ferry)", "Manly Ferry : mini-croisière pour le prix d'un ticket", "Coastal walks gratuits (Bondi-Coogee, Spit-Manly)", "Musées gratuits (Art Gallery of NSW, Australian Museum)", "Restos « BYO » : apporter son propre vin"],
+    logements: ["Appartement Darlinghurst / Newtown — 90-160 AUD/nuit", "Surry Hills / Newtown : branché, cafés", "Manly / Bondi : ambiance plage", "CBD : central mais cher"],
+    a_savoir: ["Conduite à gauche", "Décalage +9/10h : 3 jours d'adaptation", "Indice UV extrême toute l'année", "Prises type I (adaptateur requis)"],
+    risques: ["Soleil : SPF 50+, chapeau (cancer de la peau fréquent)", "Baïnes : nager entre les drapeaux", "Budget élevé (120-200€/j/pers)", "Faune : méduses en été (rare : requins/araignées)"],
     nom: "Sydney",
     pays: "Australie",
     emoji: "🦘",
