@@ -583,7 +583,11 @@ body:has(#page-transport.active) main{max-width:1600px}
 
 /* Panneau latéral (volets déroulants) */
 .pin-selector{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-radius);padding:14px;position:sticky;top:14px}
-.pin-selector-head{font-size:.92rem;font-weight:700;margin-bottom:2px}
+.pin-selector-head{font-size:.92rem;font-weight:700;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pin-expand-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;width:26px;height:26px;color:var(--muted);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
+.pin-expand-btn:hover{border-color:var(--accent);color:var(--text)}
+.pin-sel-search{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:.82rem;outline:none;margin:8px 0 10px}
+.pin-sel-search:focus{border-color:var(--accent)}
 .pin-selector-sub{font-size:.72rem;color:var(--muted);margin-bottom:12px;line-height:1.4}
 .pin-group{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--bg3)}
 .pin-group>summary{list-style:none;cursor:pointer;padding:9px 12px;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:6px;user-select:none}

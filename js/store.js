@@ -49,6 +49,20 @@ function addUserDestination(dest) {
 }
 function addUserActivity(act) { storeState.userActivities.push(act); _storePersist(); _storeEmit(); return act; }
 
+function removeUserDestination(id) {
+  storeState.userDestinations = storeState.userDestinations.filter(d => d.id !== id);
+  if (window.DESTINATIONS) { const i = window.DESTINATIONS.findIndex(d => d.id === id); if (i >= 0) window.DESTINATIONS.splice(i, 1); }
+  storeState.trips = storeState.trips.filter(t => t.destinationId !== id);
+  _storePersist(); _storeEmit(); _storeRefreshLegacy();
+}
+function updateUserDestination(id, patch) {
+  const d = storeState.userDestinations.find(x => x.id === id);
+  if (d) Object.assign(d, patch);
+  const gd = window.DESTINATIONS && window.DESTINATIONS.find(x => x.id === id);
+  if (gd) Object.assign(gd, patch);
+  _storePersist(); _storeEmit(); _storeRefreshLegacy();
+}
+
 function _storeRefreshLegacy() {
   ['buildDestGrid', 'buildBudget', 'buildValiseSelect', 'buildSearchSelect', 'buildAgendaSelect', 'trackerBuildSelect', 'buildPinned']
     .forEach(fn => { try { window[fn] && window[fn](); } catch (e) { /* ignore */ } });
