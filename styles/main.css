@@ -3,6 +3,8 @@
    (extrait de index.html — Phase 1A refonte modulaire)
    ============================================================ */
 *{box-sizing:border-box;margin:0;padding:0}
+/* Accessibilité : focus clavier visible (n'apparaît pas au clic souris) */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
