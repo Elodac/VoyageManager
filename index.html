@@ -553,9 +553,52 @@ document.addEventListener('DOMContentLoaded', () => {
   trackerBuildSelect();
   updateNavBadge();
   initCountdown();
+  initSecurityHardening();
+  initKeyboardShortcuts();
   const savedPage = sessionStorage.getItem('vm_page');
   if(savedPage && document.getElementById('page-' + savedPage)) showPage(savedPage);
 });
+
+// ── DURCISSEMENT SÉCURITÉ ──────────────────────────────
+function initSecurityHardening() {
+  const patch = () => document.querySelectorAll('a[target="_blank"]:not([data-rel-ok])').forEach(a => {
+    a.setAttribute('rel', 'noopener noreferrer'); a.setAttribute('data-rel-ok', '1');
+  });
+  patch();
+  try {
+    let scheduled = false;
+    new MutationObserver(() => {
+      if (scheduled) return; scheduled = true;
+      requestAnimationFrame(() => { scheduled = false; patch(); });
+    }).observe(document.body, { childList: true, subtree: true });
+  } catch(e) {}
+}
+
+// ── RACCOURCIS CLAVIER ─────────────────────────────────
+function initKeyboardShortcuts() {
+  document.addEventListener('keydown', e => {
+    const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName) || (document.activeElement && document.activeElement.isContentEditable);
+    // "/" → focus la recherche destinations
+    if (e.key === '/' && !inField) {
+      const inp = document.querySelector('#page-destinations .search-input');
+      if (inp) { e.preventDefault(); showPage('destinations'); setTimeout(() => inp.focus(), 60); }
+      return;
+    }
+    // "c" → créer un voyage
+    if ((e.key === 'c' || e.key === 'C') && !inField && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault(); openCreateVoyage(); return;
+    }
+    // "g" → aller au dashboard
+    if ((e.key === 'g' || e.key === 'G') && !inField && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault(); showPage('dashboard'); return;
+    }
+    // "?" → affiche l'aide raccourcis
+    if (e.key === '?' && !inField) { e.preventDefault(); showShortcutsHelp(); return; }
+  });
+}
+function showShortcutsHelp() {
+  showToast('⌨️ Raccourcis : / recherche · c créer un voyage · g accueil · Échap fermer');
+}
 
 // ── FILTRES AVANCÉS (dates + budget ±tolérance) ───────
 let advFilter = { depart: '', retour: '', budget: null, tol: 10 };
@@ -3080,12 +3123,16 @@ function showToast(msg) {
 
 // Fermeture modal destination avec Échap
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    const mo = document.getElementById('modal-overlay');
-    if (mo && !mo.classList.contains('hidden')) { mo.classList.add('hidden'); return; }
-    const tm = document.getElementById('trip-modal-overlay');
-    if (tm && !tm.classList.contains('hidden')) { tm.classList.add('hidden'); }
-  }
+  if (e.key !== 'Escape') return;
+  // Ferme l'overlay ouvert le plus « au-dessus » en premier
+  const cv = document.getElementById('create-voyage-overlay');
+  if (cv && !cv.classList.contains('hidden')) { cv.classList.add('hidden'); return; }
+  const mo = document.getElementById('modal-overlay');
+  if (mo && !mo.classList.contains('hidden')) { closeModal(); return; }
+  const tm = document.getElementById('trip-modal-overlay');
+  if (tm && !tm.classList.contains('hidden')) { tm.classList.add('hidden'); return; }
+  const ob = document.getElementById('onboarding-overlay');
+  if (ob && !ob.classList.contains('hidden')) { ob.classList.add('hidden'); }
 });
 
 // ── ONBOARDING ─────────────────────────────────────────

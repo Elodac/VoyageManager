@@ -23,10 +23,10 @@ function tripCardHTML(t) {
     <div class="trip-card" data-trip="${t.id}">
       <button class="trip-del" data-del-trip-card="${t.id}" title="Supprimer ce voyage" aria-label="Supprimer ce voyage">✕</button>
       <div class="trip-card-top">
-        <span class="trip-emoji">${t.emoji || '✈️'}</span>
+        <span class="trip-emoji">${_esc(t.emoji || '✈️')}</span>
         <div class="trip-card-head">
-          <div class="trip-name">${t.nom}</div>
-          <div class="trip-dates">${dates}</div>
+          <div class="trip-name">${_esc(t.nom)}</div>
+          <div class="trip-dates">${_esc(dates)}</div>
         </div>
       </div>
       <div class="trip-badge" style="--c:${meta.color}">${meta.label}</div>
@@ -124,10 +124,10 @@ function openTripModal(id) {
   const m = document.getElementById('trip-modal');
   m.innerHTML = `
     <div class="modal-header">
-      <div class="modal-emoji">${t.emoji || '✈️'}</div>
+      <div class="modal-emoji">${_esc(t.emoji || '✈️')}</div>
       <div class="modal-title">
-        <h2>${t.nom}</h2>
-        <div style="color:var(--muted);font-size:.85rem">${t.pays || ''} · ${t.date_depart ? t.date_depart + ' → ' + (t.date_retour || '?') : 'Dates à définir'}</div>
+        <h2>${_esc(t.nom)}</h2>
+        <div style="color:var(--muted);font-size:.85rem">${_esc(t.pays || '')} · ${t.date_depart ? _esc(t.date_depart + ' → ' + (t.date_retour || '?')) : 'Dates à définir'}</div>
       </div>
       <button class="modal-close" data-close>✕</button>
     </div>
@@ -291,6 +291,7 @@ function openTripModal(id) {
   });
 
   ov.classList.remove('hidden');
+  setTimeout(() => { const f = m.querySelector('#trip-cat-select, .modal-close'); if (f) f.focus(); }, 60);
 }
 
 // ── Navigation inter-pages (pré-sélectionne la destination) ──

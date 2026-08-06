@@ -2,6 +2,7 @@
 // services/dossier.js — génère le dossier de voyage imprimable
 // (Phase 5 — chantier 4). Agrège voyage + catalogue + agenda + valise.
 // ============================================================
+(function () {
 
 const pad = n => String(n).padStart(2, '0');
 const fmtMin = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
@@ -132,3 +133,6 @@ function openDossier(trip) {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
+
+window.openDossier = openDossier;
+})();
