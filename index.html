@@ -30,6 +30,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     <button class="nav-btn" onclick="showPage('recherche')">🔍 Recherche</button>
     <button class="nav-btn" onclick="showPage('valises')">🧳 Valises</button>
     <button class="nav-btn" onclick="showPage('budget')">💶 Budget</button>
+    <button class="nav-btn" onclick="showPage('roadtrips')">🚗 Road trips</button>
     <button class="nav-btn" onclick="showPage('archives')">🗄️ Archives</button>
     <button class="nav-btn" onclick="showPage('ajouter')">➕ Ajouter</button>
   </div>
@@ -115,6 +116,20 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     et enrichir la destination pour les prochains voyageurs. Tu peux réactiver un voyage à tout moment.
   </p>
   <div id="archives-mount"></div>
+</section>
+
+<!-- ══ PAGE : ROAD TRIPS ═════════════════════════════ -->
+<section class="page" id="page-roadtrips">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap">
+    <h1 style="font-size:1.4rem;font-weight:700">🚗 Road trips</h1>
+    <button class="btn btn-success btn-sm" onclick="openRoadtripEditor()">➕ Créer un road trip</button>
+  </div>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px;max-width:720px">
+    Compose un itinéraire multi-étapes : ajoute des villes depuis le catalogue ou par recherche,
+    ordonne-les, définis les nuits par étape. Distance, durée de conduite et budget se calculent tout seuls,
+    et l'itinéraire s'affiche sur la carte.
+  </p>
+  <div id="roadtrips-mount"></div>
 </section>
 
 <!-- ══ PAGE : DESTINATIONS ═══════════════════════════ -->
@@ -554,6 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildSearchSelect();
   buildAgendaSelect();
   trackerBuildSelect();
+  buildRoadtrips();
   updateNavBadge();
   initCountdown();
   initSecurityHardening();
@@ -690,6 +706,7 @@ function showPage(id) {
     else setTimeout(() => map.invalidateSize(), 80);
   }
   if(id === 'archives') buildArchives();
+  if(id === 'roadtrips') buildRoadtrips();
 }
 
 // ── COUNTDOWN ──────────────────────────────────────────
@@ -996,6 +1013,254 @@ function saveEditDestination(id) {
   buildPinned(); buildDashboard(); buildBudget(); renderDestGrid();
   openDest(id);
   showToast('✅ Destination modifiée');
+}
+
+// ════════════════════════════════════════════════════════
+//  ROAD TRIPS — itinéraires multi-étapes
+// ════════════════════════════════════════════════════════
+const RT_KEY = 'vm_roadtrips';
+let _rtDraft = null;
+let _rtGeoResults = [];
+let _rtSearchTimer = null;
+let _rtMapLayer = null;
+
+function getRoadtrips() { try { const a = JSON.parse(localStorage.getItem(RT_KEY)); return Array.isArray(a) ? a : []; } catch(e) { return []; } }
+function setRoadtrips(a) { lsSafe(RT_KEY, a); }
+function rtGet(id) { return getRoadtrips().find(r => r.id === id); }
+function rtNewId() { return 'rt' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36); }
+
+function rtComputeStats(stops) {
+  stops = stops || [];
+  let km = 0;
+  for (let i = 1; i < stops.length; i++) {
+    if (stops[i-1].coords && stops[i].coords && typeof haversine === 'function') km += haversine(stops[i-1].coords, stops[i].coords);
+  }
+  km = Math.round(km * 1.3); // facteur routier vs vol d'oiseau
+  const nights = stops.reduce((s, st) => s + (+st.nights || 0), 0);
+  const hours = Math.round((km / 75) * 10) / 10; // ~75 km/h de moyenne
+  let budget = 0;
+  stops.forEach(st => {
+    const d = st.destId && DESTINATIONS.find(x => x.id === st.destId);
+    if (d && d.budget_min) { const perNight = ((d.budget_min + d.budget_max) / 2) / 4; budget += perNight * Math.max(1, +st.nights || 1); }
+  });
+  return { km, nights, hours, budget: Math.round(budget), stopCount: stops.length };
+}
+
+// ── Page liste ──
+function buildRoadtrips() {
+  const mount = document.getElementById('roadtrips-mount');
+  if (!mount) return;
+  const rts = getRoadtrips();
+  if (!rts.length) {
+    mount.className = '';
+    mount.innerHTML = `<div class="pin-empty">🚗 Aucun road trip pour l'instant. Clique <button class="btn btn-primary btn-sm" onclick="openRoadtripEditor()" style="margin:0 4px">➕ Créer un road trip</button> pour composer ton itinéraire.</div>`;
+    return;
+  }
+  mount.className = 'grid grid-3';
+  mount.innerHTML = rts.map(rt => {
+    const s = rtComputeStats(rt.stops);
+    const route = (rt.stops || []).map(st => escHtml(st.nom.split('—')[0].trim())).join(' → ') || 'Aucune étape';
+    return `<div class="rt-card" onclick="openRoadtripEditor('${escHtml(rt.id)}')">
+      <button class="trip-del" onclick="event.stopPropagation();rtDelete('${escHtml(rt.id)}')" title="Supprimer" aria-label="Supprimer">✕</button>
+      <div class="rt-card-title">🚗 ${escHtml(rt.nom || 'Road trip')}</div>
+      <div class="rt-card-route">${route}</div>
+      <div class="rt-card-stats"><span>📍 ${s.stopCount} étape${s.stopCount>1?'s':''}</span><span>🌙 ${s.nights} nuit${s.nights>1?'s':''}</span><span>🛣️ ${s.km} km</span><span>⏱️ ~${s.hours}h</span></div>
+      <div class="rt-card-actions">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openRoadtripEditor('${escHtml(rt.id)}')">✏️ Modifier</button>
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();showRoadtripOnMap('${escHtml(rt.id)}')">📍 Sur la carte</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Éditeur ──
+function openRoadtripEditor(id) {
+  const existing = id ? rtGet(id) : null;
+  _rtDraft = existing ? JSON.parse(JSON.stringify(existing)) : { id: rtNewId(), nom: '', stops: [], createdAt: Date.now() };
+  _rtGeoResults = [];
+  let ov = document.getElementById('roadtrip-overlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'roadtrip-overlay'; ov.className = 'modal-overlay hidden';
+    ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.add('hidden'); });
+  }
+  ov.classList.remove('hidden');
+  renderRtEditor();
+}
+
+function renderRtStops() {
+  if (!_rtDraft.stops.length) return `<div style="color:var(--muted);font-size:.83rem;padding:8px 0">Aucune étape. Ajoute des villes ci-dessous 👇</div>`;
+  return _rtDraft.stops.map((s, i) => `
+    <div class="rt-stop" draggable="true" data-i="${i}" ondragstart="rtDragStart(event,${i})" ondragover="event.preventDefault()" ondrop="rtDrop(event,${i})" ondragend="rtDragEnd(event)">
+      <span class="rt-stop-num">${i + 1}</span>
+      <div class="rt-stop-body">
+        <div class="rt-stop-name">${escHtml(s.nom)}${s.destId ? ' <span class="rt-badge">fiche</span>' : ' <span class="rt-badge rt-badge-geo">lieu</span>'}</div>
+        <div class="rt-stop-controls">
+          <label class="rt-nights-lbl">🌙 <input type="number" min="0" max="90" value="${+s.nights || 0}" onchange="rtSetNights(${i},this.value)" class="rt-nights"> nuits</label>
+          <input class="rt-note" placeholder="note (hôtel, à voir…)" value="${escHtml(s.note || '')}" onchange="rtSetNote(${i},this.value)">
+        </div>
+      </div>
+      <div class="rt-stop-actions">
+        <button onclick="rtMove(${i},-1)" title="Monter" ${i === 0 ? 'disabled' : ''}>▲</button>
+        <button onclick="rtMove(${i},1)" title="Descendre" ${i === _rtDraft.stops.length - 1 ? 'disabled' : ''}>▼</button>
+        ${s.destId ? `<button onclick="openDest('${escHtml(s.destId)}')" title="Voir la fiche">📋</button>` : ''}
+        <button onclick="rtRemove(${i})" title="Retirer" class="rt-del-stop">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderRtEditor() {
+  const ov = document.getElementById('roadtrip-overlay');
+  if (!ov || !_rtDraft) return;
+  const st = rtComputeStats(_rtDraft.stops);
+  const isSaved = !!rtGet(_rtDraft.id);
+  ov.innerHTML = `<div class="modal" style="max-width:660px">
+    <div class="modal-header"><div class="modal-emoji">🚗</div>
+      <div class="modal-title"><h2>${_rtDraft.nom ? escHtml(_rtDraft.nom) : 'Nouveau road trip'}</h2>
+        <div style="color:var(--muted);font-size:.85rem">${st.stopCount} étapes · ${st.nights} nuits · ${st.km} km · ~${st.hours}h de route</div></div>
+      <button class="modal-close" onclick="document.getElementById('roadtrip-overlay').classList.add('hidden')" aria-label="Fermer">✕</button></div>
+    <div class="modal-body">
+      <div class="adv-field"><label>Nom du road trip</label>
+        <input class="add-item-input" id="rt-nom" value="${escHtml(_rtDraft.nom)}" placeholder="ex : Tour d'Irlande" oninput="_rtDraft.nom=this.value" style="width:100%"></div>
+
+      <h3 style="font-size:.85rem;font-weight:600;margin:16px 0 8px">🗺️ Étapes (glisse pour réordonner)</h3>
+      <div id="rt-stops" class="rt-stops">${renderRtStops()}</div>
+
+      <h3 style="font-size:.85rem;font-weight:600;margin:16px 0 8px">➕ Ajouter une étape</h3>
+      <input class="add-item-input" id="rt-add-search" placeholder="🔎 Ville, lieu, ou destination du catalogue…" oninput="rtSearchStops(this.value)" style="width:100%" autocomplete="off">
+      <div id="rt-add-results" class="rt-add-results"></div>
+
+      <div class="rt-summary">
+        <div><strong>${st.stopCount}</strong><span>étapes</span></div>
+        <div><strong>${st.nights}</strong><span>nuits</span></div>
+        <div><strong>${st.km} km</strong><span>distance route</span></div>
+        <div><strong>~${st.hours} h</strong><span>de conduite</span></div>
+        ${st.budget ? `<div><strong>~${st.budget} €</strong><span>budget indicatif</span></div>` : ''}
+      </div>
+
+      <div class="trip-modal-footer">
+        <button class="btn btn-success" onclick="rtSave(false)">💾 Enregistrer</button>
+        <button class="btn btn-primary" onclick="rtSave(true)">📍 Enregistrer &amp; voir sur la carte</button>
+        ${isSaved ? `<button class="btn btn-sm" style="background:#3b1111;color:#f87171;border:1px solid #7f1d1d;margin-left:auto" onclick="rtDelete('${escHtml(_rtDraft.id)}')">🗑️ Supprimer</button>` : ''}
+      </div>
+    </div></div>`;
+}
+
+function clearRtSearch() {
+  const inp = document.getElementById('rt-add-search'); if (inp) inp.value = '';
+  const box = document.getElementById('rt-add-results'); if (box) box.innerHTML = '';
+  _rtGeoResults = [];
+}
+
+function rtSearchStops(q) {
+  const box = document.getElementById('rt-add-results'); if (!box) return;
+  q = (q || '').trim();
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  const ql = q.toLowerCase();
+  const cat = DESTINATIONS.filter(d => d.nom.toLowerCase().includes(ql) || (d.pays || '').toLowerCase().includes(ql)).slice(0, 6);
+  const catHtml = cat.map(d => `<button class="rt-result" onclick="rtAddStop('${escHtml(d.id)}')"><span>${escHtml(d.emoji)} ${escHtml(d.nom)} <span style="color:var(--muted)">· ${escHtml(d.pays)}</span></span><span class="rt-result-tag">catalogue</span></button>`).join('');
+  box.innerHTML = catHtml + `<div class="rt-geo-hint">🔎 Recherche d'autres lieux…</div>`;
+  clearTimeout(_rtSearchTimer);
+  _rtSearchTimer = setTimeout(async () => {
+    if (typeof geocode !== 'function') { box.innerHTML = catHtml || '<div class="rt-geo-hint">Aucun résultat.</div>'; return; }
+    try {
+      const { results } = await geocode(q);
+      _rtGeoResults = (results || []).slice(0, 5);
+      const geoHtml = _rtGeoResults.map((r, gi) => `<button class="rt-result" onclick="rtAddCustomStop(${gi})"><span>📍 ${escHtml(r.label)}</span><span class="rt-result-tag rt-result-geo">carte</span></button>`).join('');
+      box.innerHTML = catHtml + (geoHtml || (catHtml ? '' : '<div class="rt-geo-hint">Aucun résultat.</div>'));
+    } catch(e) { box.innerHTML = catHtml; }
+  }, 600);
+}
+
+function rtAddStop(destId) {
+  const d = DESTINATIONS.find(x => x.id === destId); if (!d || !_rtDraft) return;
+  _rtDraft.stops.push({ id: rtNewId(), nom: d.nom, destId: d.id, coords: d.coords ? [d.coords[0], d.coords[1]] : null, nights: 2, note: '' });
+  if (!_rtDraft.nom && d.pays) _rtDraft.nom = 'Road trip ' + d.pays;
+  renderRtEditor();
+}
+function rtAddCustomStop(gi) {
+  const r = _rtGeoResults[gi]; if (!r || !_rtDraft) return;
+  _rtDraft.stops.push({ id: rtNewId(), nom: (r.ville || r.label.split(',')[0]).trim(), destId: null, coords: [r.lat, r.lon], nights: 1, note: '' });
+  if (!_rtDraft.nom && r.pays) _rtDraft.nom = 'Road trip ' + r.pays;
+  renderRtEditor();
+}
+function rtSetNights(i, v) { if (_rtDraft.stops[i]) { _rtDraft.stops[i].nights = Math.max(0, +v || 0); renderRtEditor(); } }
+function rtSetNote(i, v) { if (_rtDraft.stops[i]) _rtDraft.stops[i].note = v; }
+function rtRemove(i) { _rtDraft.stops.splice(i, 1); renderRtEditor(); }
+function rtMove(i, dir) {
+  const j = i + dir; if (j < 0 || j >= _rtDraft.stops.length) return;
+  const t = _rtDraft.stops[i]; _rtDraft.stops[i] = _rtDraft.stops[j]; _rtDraft.stops[j] = t;
+  renderRtEditor();
+}
+let _rtDragI = null;
+function rtDragStart(e, i) { _rtDragI = i; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(i)); } catch(_) {} }
+function rtDrop(e, i) {
+  e.preventDefault();
+  if (_rtDragI === null || _rtDragI === i) return;
+  const moved = _rtDraft.stops.splice(_rtDragI, 1)[0];
+  _rtDraft.stops.splice(i, 0, moved);
+  _rtDragI = null;
+  renderRtEditor();
+}
+function rtDragEnd() { _rtDragI = null; }
+
+function rtSave(showMap) {
+  if (!_rtDraft) return;
+  const nom = (document.getElementById('rt-nom')?.value || _rtDraft.nom || '').trim() || 'Road trip sans nom';
+  _rtDraft.nom = nom; _rtDraft.updatedAt = Date.now();
+  if (!_rtDraft.stops.length) { showToast('Ajoute au moins une étape'); return; }
+  const all = getRoadtrips();
+  const idx = all.findIndex(r => r.id === _rtDraft.id);
+  if (idx >= 0) all[idx] = _rtDraft; else all.push(_rtDraft);
+  setRoadtrips(all);
+  const ov = document.getElementById('roadtrip-overlay'); if (ov) ov.classList.add('hidden');
+  buildRoadtrips();
+  showToast('🚗 Road trip enregistré');
+  if (showMap) showRoadtripOnMap(_rtDraft.id);
+}
+function rtDelete(id) {
+  if (!confirm('Supprimer ce road trip ?')) return;
+  setRoadtrips(getRoadtrips().filter(r => r.id !== id));
+  const ov = document.getElementById('roadtrip-overlay'); if (ov) ov.classList.add('hidden');
+  buildRoadtrips();
+  showToast('🗑️ Road trip supprimé');
+}
+
+// Ajouter la destination ouverte à un road trip (depuis la fiche)
+function rtQuickAdd(destId) {
+  const d = DESTINATIONS.find(x => x.id === destId); if (!d) return;
+  closeModal();
+  openRoadtripEditor();
+  _rtDraft.stops.push({ id: rtNewId(), nom: d.nom, destId: d.id, coords: d.coords ? [d.coords[0], d.coords[1]] : null, nights: 2, note: '' });
+  if (d.pays) _rtDraft.nom = 'Road trip ' + d.pays;
+  renderRtEditor();
+}
+
+// Affiche l'itinéraire sur la carte (polyline + étapes numérotées)
+function showRoadtripOnMap(id) {
+  const rt = rtGet(id); if (!rt) return;
+  const stops = (rt.stops || []).filter(s => s.coords && s.coords.length === 2);
+  if (!stops.length) { showToast('Aucune étape géolocalisée'); return; }
+  showPage('carte');
+  const draw = (tries) => {
+    if (typeof L === 'undefined') return;
+    if (!map) { if ((tries || 0) < 20) setTimeout(() => draw((tries || 0) + 1), 200); return; }
+    if (_rtMapLayer) { map.removeLayer(_rtMapLayer); _rtMapLayer = null; }
+    const grp = L.layerGroup();
+    const pts = stops.map(s => s.coords);
+    L.polyline(pts, { color: '#3b82f6', weight: 3, opacity: .85, dashArray: '7 7' }).addTo(grp);
+    stops.forEach((s, i) => {
+      L.marker(s.coords, { icon: makeIcon('#3b82f6', String(i + 1), 30) })
+        .bindPopup(`<strong>${i + 1}. ${escHtml(s.nom)}</strong><br>${(+s.nights || 0)} nuit${(+s.nights||0)>1?'s':''}${s.note ? '<br>' + escHtml(s.note) : ''}`)
+        .addTo(grp);
+    });
+    grp.addTo(map); _rtMapLayer = grp;
+    try { map.fitBounds(L.latLngBounds(pts).pad(0.25)); } catch(e) {}
+    setTimeout(() => map.invalidateSize(), 150);
+    showToast('🗺️ Itinéraire « ' + rt.nom + ' » tracé');
+  };
+  setTimeout(() => draw(0), 200);
 }
 
 function buildPinned() {
@@ -1625,6 +1890,7 @@ function openDest(id) {
       <button class="btn btn-outline btn-sm" onclick="closeModal();window.vmGoTo&&window.vmGoTo('programmes','${d.id}')">🧠 Programme</button>
       <button class="btn btn-outline btn-sm" onclick="closeModal();showPage('recherche');document.getElementById('search-dest-select').value='${d.id}';updateSearchLinks()">🔍 Réserver</button>
       <button class="btn btn-outline btn-sm" onclick="closeModal();showPage('carte');setTimeout(()=>focusMap('${d.id}'),400)">📍 Sur la carte</button>
+      <button class="btn btn-outline btn-sm" onclick="rtQuickAdd('${d.id}')">🚗 Road trip</button>
       <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${d.routard&&d.routard.url ? d.routard.url : 'https://www.google.com/search?q='+encodeURIComponent('guide du routard '+d.nom)}">🧭 Guide du Routard</a>
       ${d.custom ? `<button class="btn btn-outline btn-sm" onclick="editDestination('${escHtml(d.id)}')">✏️ Modifier</button>
       <button class="btn btn-sm" style="background:#3b1111;color:#f87171;border:1px solid #7f1d1d" onclick="deleteDestination('${escHtml(d.id)}')">🗑️ Supprimer</button>` : ''}
@@ -3345,7 +3611,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputImport = document.getElementById('input-import-json');
   if (btnExport) {
     btnExport.addEventListener('click', () => {
-      const KEYS = ['vm_store_v2', 'voyagemanager_valises', 'voyagemanager_agenda', TRACKER_KEY];
+      const KEYS = ['vm_store_v2', 'voyagemanager_valises', 'voyagemanager_agenda', TRACKER_KEY, 'vm_roadtrips', 'vm_pinned', 'vm_archived', 'vm_statut_override'];
       const snapshot = { _vmVersion: 3, _exported: new Date().toISOString() };
       KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) try { snapshot[k] = JSON.parse(v); } catch(e) {} });
       const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
@@ -3369,7 +3635,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Format invalide');
           const ver = data._vmVersion || 1;
           if (!confirm(`Importer la sauvegarde du ${data._exported ? data._exported.slice(0,10) : '?'} (version ${ver}) ? Les données actuelles seront écrasées.`)) return;
-          const VALID_KEYS = new Set(['vm_store_v2','vm_store_v1','voyagemanager_valises','voyagemanager_agenda', TRACKER_KEY]);
+          const VALID_KEYS = new Set(['vm_store_v2','vm_store_v1','voyagemanager_valises','voyagemanager_agenda', TRACKER_KEY, 'vm_roadtrips', 'vm_pinned', 'vm_archived', 'vm_statut_override']);
           let imported = 0;
           Object.entries(data).forEach(([k, v]) => {
             if(VALID_KEYS.has(k)) { localStorage.setItem(k, JSON.stringify(v)); imported++; }
