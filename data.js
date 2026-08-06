@@ -1187,6 +1187,10 @@ const DESTINATIONS = [
   // ── LONGS COURRIERS ───────────────────────────────────────
   {
     id: "guadeloupe",
+    bons_plans: ["Plages gratuites (Grande-Anse, Sainte-Anne)", "Chutes du Carbet et Soufrière (rando)", "Îles (Marie-Galante, Les Saintes) en bateau", "Rhum agricole chez les distilleries", "Marché de Pointe-à-Pitre (épices)"],
+    logements: ["Gosier / Sainte-Anne / Deshaies — 90-160€/nuit", "Grande-Terre : plages, animation", "Basse-Terre : nature, volcan", "Gîtes créoles"],
+    a_savoir: ["DOM français : euro, pas de change", "Vol ~8h depuis Paris", "Voiture indispensable", "Saison sèche : déc-avril (carême)"],
+    risques: ["Saison cyclonique (juin-nov)", "Soleil fort (SPF, hydratation)", "Sargasses sur certaines plages", "Baignade : courants côté Atlantique"],
     nom: "Guadeloupe",
     pays: "France (DOM)",
     emoji: "🌴",
@@ -1212,6 +1216,10 @@ const DESTINATIONS = [
   },
   {
     id: "reunion",
+    bons_plans: ["Piton de la Fournaise (volcan actif, rando)", "Cirques de Mafate, Cilaos, Salazie", "Plages du lagon (Saint-Gilles, L'Hermitage)", "Cascades et forêts (Trou de Fer)", "Cari et rougail chez les locaux"],
+    logements: ["Saint-Gilles / Saint-Pierre — 80-150€/nuit", "Ouest (Saint-Gilles) : lagon, animation", "Sud/Hauts : nature, randonnée", "Gîtes de montagne à Mafate"],
+    a_savoir: ["DOM français : euro", "Vol ~11h depuis Paris", "Voiture indispensable (relief)", "L'île de la randonnée par excellence"],
+    risques: ["Requins : baignade uniquement dans le lagon", "Saison cyclonique (jan-mars)", "Randos exigeantes (dénivelés énormes)", "Routes de montagne sinueuses"],
     nom: "La Réunion",
     pays: "France (DOM)",
     emoji: "🌋",
@@ -1237,6 +1245,10 @@ const DESTINATIONS = [
   },
   {
     id: "tahiti",
+    bons_plans: ["Lagons et snorkeling (Moorea, Bora Bora)", "Plages publiques (Point Venus)", "Marché de Papeete (artisanat, perles)", "Roulottes (street food) le soir", "Randos vers les cascades (Fautaua)"],
+    logements: ["Papeete / Moorea / Bora Bora — 150-400€/nuit", "Moorea : accessible et magnifique", "Bora Bora : luxe (overwater)", "Pensions de famille moins chères"],
+    a_savoir: ["COM française : franc CFP (XPF)", "Vol ~22h depuis Paris (via LA/Tokyo)", "Décalage -11/12h", "Vie très chère"],
+    risques: ["Budget très élevé", "Vol long et cher", "Saison des pluies (nov-avril)", "Soleil intense, coraux (chaussures d'eau)"],
     nom: "Tahiti / Polynésie française",
     pays: "France (COM)",
     emoji: "🌺",
@@ -1260,6 +1272,10 @@ const DESTINATIONS = [
   },
   {
     id: "bahamas",
+    bons_plans: ["Plages gratuites (Cable Beach, Pink Sands à Harbour Island)", "Exuma : cochons nageurs, cayes", "Snorkeling et récifs", "Nassau : Queen's Staircase, marché", "Ferries entre les îles"],
+    logements: ["Nassau / Out Islands — 120-250€/nuit", "Nassau : central, casinos", "Out Islands : nature, calme", "Guesthouses locales"],
+    a_savoir: ["Monnaie : dollar bahamien (= USD)", "Vol via USA (ESTA requis en transit)", "Anglais", "Conduite à gauche"],
+    risques: ["Saison cyclonique (juin-nov)", "Prix élevés (tout est importé)", "Soleil fort", "Certaines zones de Nassau à éviter la nuit"],
     nom: "Bahamas",
     pays: "Bahamas",
     emoji: "🐚",
@@ -3268,6 +3284,10 @@ const DESTINATIONS = [
   },
   {
     id: "melbourne",
+    bons_plans: ["Laneways et street art (Hosier Lane) gratuits", "Tram gratuit dans le CBD (Free Tram Zone)", "Great Ocean Road (excursion, 12 Apôtres)", "Queen Victoria Market", "Cafés (capitale du café d'Australie)"],
+    logements: ["CBD / Fitzroy / St Kilda — 100-180 AUD/nuit", "Fitzroy : branché, bars", "St Kilda : plage, animation", "CBD : central"],
+    a_savoir: ["Conduite à gauche", "Météo très changeante (4 saisons/jour)", "Base pour la Great Ocean Road", "Prises type I"],
+    risques: ["Soleil UV extrême (SPF)", "Météo imprévisible", "Budget élevé", "Great Ocean Road : longue route"],
     nom: "Melbourne",
     pays: "Australie",
     emoji: "☕",
@@ -3321,6 +3341,10 @@ const DESTINATIONS = [
   },
   {
     id: "cairns_gbr",
+    bons_plans: ["Grande Barrière de corail (sorties plongée/snorkeling)", "Forêt tropicale de Daintree (la plus vieille du monde)", "Kuranda (train + téléphérique Skyrail)", "Lagon gratuit du front de mer de Cairns", "Marchés nocturnes"],
+    logements: ["Cairns / Port Douglas — 100-200 AUD/nuit", "Cairns : base plongée", "Port Douglas : plus chic, proche récif", "Auberges pour backpackers"],
+    a_savoir: ["Conduite à gauche", "Point de départ pour la Grande Barrière", "Climat tropical humide", "Baignade en mer : filets anti-méduses"],
+    risques: ["Méduses mortelles (box jellyfish) nov-mai", "Crocodiles (ne pas se baigner en rivière)", "Soleil extrême", "Saison des pluies et cyclones (déc-avril)"],
     nom: "Cairns & Grande Barrière de Corail",
     pays: "Australie",
     emoji: "🐠",
@@ -3373,6 +3397,10 @@ const DESTINATIONS = [
   },
   {
     id: "uluru",
+    bons_plans: ["Lever/coucher de soleil sur Uluru (points de vue gratuits)", "Field of Light (installation lumineuse)", "Kata Tjuta (Monts Olga) rando", "Centre culturel aborigène (gratuit)", "Base Walk autour du rocher (10 km)"],
+    logements: ["Ayers Rock Resort (Yulara) — 200-350 AUD/nuit", "Unique resort : réserver longtemps avant", "Camping possible", "Peu d'options (monopole)"],
+    a_savoir: ["Escalade d'Uluru interdite (site sacré)", "Chaleur extrême le jour, froid la nuit", "Vol depuis Sydney/Alice Springs", "Respect de la culture Anangu"],
+    risques: ["Chaleur extrême (40°C+) et déshydratation", "Mouches nombreuses (filet de visage utile)", "Isolement total (essence, eau)", "Nuits très froides en hiver"],
     nom: "Uluru & Red Centre",
     pays: "Australie",
     emoji: "🔴",
@@ -3425,6 +3453,10 @@ const DESTINATIONS = [
   },
   {
     id: "perth",
+    bons_plans: ["Kings Park (vue + jardin botanique) gratuit", "Rottnest Island (quokkas) en ferry", "Fremantle : port, marchés, brasseries", "Cottesloe Beach", "Swan Valley (vignobles)"],
+    logements: ["Perth CBD / Fremantle — 100-180 AUD/nuit", "Fremantle : bohème, port", "CBD : central", "Scarborough/Cottesloe : plage"],
+    a_savoir: ["Ville la plus isolée du monde", "Conduite à gauche", "Climat méditerranéen", "Décalage horaire important"],
+    risques: ["Soleil UV extrême", "Très isolée (vols longs)", "Chaleur l'été austral", "Requins (plages surveillées)"],
     nom: "Perth & Côte Ouest",
     pays: "Australie",
     emoji: "🦔",
@@ -3481,6 +3513,10 @@ const DESTINATIONS = [
   // ══════════════════════════════════════════════════════════
   {
     id: "new_york",
+    bons_plans: ["Staten Island Ferry gratuit (vue sur la Statue)", "High Line et Central Park gratuits", "TKTS pour Broadway à prix réduit", "MetroCard/OMNY illimitée", "MoMA gratuit le vendredi soir"],
+    logements: ["Manhattan / Brooklyn — 180-350 USD/nuit", "Midtown : central mais cher", "Brooklyn (Williamsburg) : branché, moins cher", "Éviter Times Square pour dormir"],
+    a_savoir: ["Metro 24h/24", "Pourboire 18-20% obligatoire", "Taxes ajoutées aux prix affichés", "ESTA requis"],
+    risques: ["Ville chère (hébergement, restos)", "Pickpockets à Times Square / metro", "Pourboire attendu partout", "Été chaud/humide, hiver glacial"],
     nom: "New York",
     pays: "États-Unis",
     emoji: "🗽",
@@ -3541,6 +3577,10 @@ const DESTINATIONS = [
   },
   {
     id: "los_angeles",
+    bons_plans: ["Plages gratuites (Santa Monica, Venice)", "Griffith Observatory (vue + gratuit)", "Randonnée vers le Hollywood Sign", "Getty Center gratuit (parking payant)", "Food trucks et taquerias"],
+    logements: ["Santa Monica / Hollywood / DTLA — 150-300 USD/nuit", "Santa Monica : plage", "Hollywood : central touristique", "West Hollywood : animé"],
+    a_savoir: ["Voiture indispensable (ville tentaculaire)", "Circulation dense (embouteillages)", "Pourboire 18-20%", "ESTA requis"],
+    risques: ["Sans voiture, très difficile", "Embouteillages massifs", "Certains quartiers à éviter (Skid Row)", "Séismes (rares)"],
     nom: "Los Angeles",
     pays: "États-Unis",
     emoji: "🌴",
@@ -3595,6 +3635,10 @@ const DESTINATIONS = [
   },
   {
     id: "san_francisco",
+    bons_plans: ["Golden Gate Bridge à pied/vélo (gratuit)", "Cable car (billet journée)", "Lombard Street, Painted Ladies", "Ferry pour Sausalito", "Ferry Building Marketplace"],
+    logements: ["Union Square / Fisherman's Wharf — 180-320 USD/nuit", "Union Square : central", "North Beach : charme italien", "Éviter le Tenderloin"],
+    a_savoir: ["Brouillard fréquent (prévoir une veste)", "Collines raides", "Base pour Napa et Big Sur", "Cable car et Muni"],
+    risques: ["Tenderloin/SoMa : éviter la nuit (sans-abrisme)", "Vols dans les voitures (ne rien laisser visible)", "Brouillard et fraîcheur l'été", "Prix très élevés"],
     nom: "San Francisco",
     pays: "États-Unis",
     emoji: "🌉",
@@ -3650,6 +3694,10 @@ const DESTINATIONS = [
   },
   {
     id: "new_orleans",
+    bons_plans: ["French Quarter à pied (musique de rue gratuite)", "Frenchmen Street pour le jazz (moins touristique que Bourbon)", "Tramway St. Charles (vieux quartiers)", "Beignets au Café du Monde", "Marché français"],
+    logements: ["French Quarter / Marigny — 130-250 USD/nuit", "French Quarter : central, animé", "Marigny/Bywater : bohème, jazz", "Garden District : élégant"],
+    a_savoir: ["Berceau du jazz", "Mardi Gras (février) : réserver très tôt", "Cuisine cajun/créole (gumbo, jambalaya)", "Chaleur humide"],
+    risques: ["Bourbon Street la nuit : ivresse, vigilance", "Chaleur et humidité étouffantes", "Saison des ouragans (juin-nov)", "Certains quartiers à éviter la nuit"],
     nom: "La Nouvelle-Orléans",
     pays: "États-Unis",
     emoji: "🎷",
@@ -3704,6 +3752,10 @@ const DESTINATIONS = [
   },
   {
     id: "grand_canyon",
+    bons_plans: ["Pass America the Beautiful si plusieurs parcs", "Navettes gratuites (South Rim)", "Points de vue Mather, Yavapai (gratuits)", "Lever/coucher de soleil spectaculaires", "Route 66 à proximité"],
+    logements: ["South Rim (village) / Tusayan — 150-300 USD/nuit", "Dans le parc : réserver des mois avant", "Tusayan : à l'entrée", "Williams/Flagstaff : moins cher"],
+    a_savoir: ["Voiture indispensable", "South Rim ouvert toute l'année", "Altitude ~2100 m (fraîcheur)", "Distances énormes dans l'Ouest"],
+    risques: ["Chaleur extrême au fond du canyon (été)", "Ne pas descendre-remonter en une journée", "Déshydratation", "Bords non sécurisés (vertige)"],
     nom: "Grand Canyon & Route 66",
     pays: "États-Unis",
     emoji: "🏜️",
@@ -3758,6 +3810,10 @@ const DESTINATIONS = [
   },
   {
     id: "hawaii",
+    bons_plans: ["Plages publiques gratuites", "Volcans (Big Island) : parc national", "Road to Hana (Maui)", "Snorkeling (Hanauma Bay, réserver)", "Marchés fermiers et food trucks (crevettes)"],
+    logements: ["Big Island / Maui — 200-400 USD/nuit", "Kona/Hilo (Big Island)", "Maui : plages, luxe", "Locations vacances"],
+    a_savoir: ["État américain : USD, ESTA", "Vol très long (~20h depuis Paris)", "Voiture indispensable", "Respect de la nature et de la culture hawaïenne"],
+    risques: ["Budget élevé", "Vol très long", "Courants et vagues (baignade prudente)", "Coulées de lave (zones fermées)"],
     nom: "Hawaï — Big Island & Maui",
     pays: "États-Unis",
     emoji: "🌺",
@@ -3812,6 +3868,10 @@ const DESTINATIONS = [
 
   {
     id: "miami",
+    bons_plans: ["Plages gratuites (South Beach)", "Art déco de Ocean Drive à pied", "Wynwood Walls (street art)", "Little Havana (cubain)", "Everglades en excursion (airboat)"],
+    logements: ["South Beach / Brickell — 150-300 USD/nuit", "South Beach : plage, animation", "Brickell : moderne, central", "Wynwood : branché"],
+    a_savoir: ["Espagnol très présent", "Voiture utile", "Base pour les Keys et les Everglades", "Pourboire 18-20%"],
+    risques: ["Saison des ouragans (juin-nov)", "Chaleur et humidité", "South Beach la nuit : vigilance", "Prix élevés en saison"],
     nom: "Miami & Floride",
     pays: "États-Unis",
     emoji: "🌴",
@@ -3864,6 +3924,10 @@ const DESTINATIONS = [
   },
   {
     id: "las_vegas",
+    bons_plans: ["Strip à pied et fontaines du Bellagio (gratuit)", "Spectacles gratuits (volcan du Mirage, sirènes)", "Buffets et happy hours", "Excursions (Grand Canyon, Antelope Canyon)", "Fremont Street (vieux Vegas)"],
+    logements: ["Sur le Strip — 80-250 USD/nuit (+ resort fee)", "Strip : central", "Downtown (Fremont) : moins cher", "Attention aux « resort fees »"],
+    a_savoir: ["Ville du jeu et du spectacle", "Chaleur désertique extrême l'été", "Base pour les parcs de l'Ouest", "Resort fees ajoutés au prix"],
+    risques: ["Chaleur 40°C+ l'été", "Jeu : budget maîtrisé", "« Resort fees » cachés", "Déshydratation (boire beaucoup)"],
     nom: "Las Vegas & Nevada",
     pays: "États-Unis",
     emoji: "🎰",
@@ -3916,6 +3980,10 @@ const DESTINATIONS = [
   },
   {
     id: "chicago",
+    bons_plans: ["Millennium Park et le Bean (gratuit)", "Architecture : croisière sur la rivière", "Art Institute (le mercredi soir réduit)", "Navy Pier", "Deep-dish pizza et hot-dog local"],
+    logements: ["The Loop / River North — 150-280 USD/nuit", "The Loop : central", "River North : restos, vie nocturne", "Wicker Park : branché"],
+    a_savoir: ["« Windy City » (vent du lac)", "Metro (L train)", "Capitale de l'architecture US", "Hiver très rigoureux"],
+    risques: ["Hiver glacial et venteux", "Certains quartiers sud/ouest à éviter", "Prix élevés en centre", "Été chaud et humide"],
     nom: "Chicago",
     pays: "États-Unis",
     emoji: "🌬️",
@@ -3969,6 +4037,10 @@ const DESTINATIONS = [
   },
   {
     id: "yellowstone",
+    bons_plans: ["Geysers (Old Faithful) et sources (Grand Prismatic)", "Faune (bisons, ours, loups) : Lamar Valley", "Pass America the Beautiful (parcs)", "Randonnées balisées", "Grand Teton à proximité"],
+    logements: ["Lodges du parc / Jackson — 150-350 USD/nuit", "Lodges : réserver ~1 an avant", "West Yellowstone : à l'entrée", "Camping (sur réservation)"],
+    a_savoir: ["Voiture indispensable, distances énormes", "Ouvert principalement mai-oct", "Altitude ~2400 m", "Réserver l'hébergement très tôt"],
+    risques: ["Faune sauvage : distances de sécurité (bisons, ours)", "Sources brûlantes : rester sur les passerelles", "Neige possible même en été", "Isolement (essence, provisions)"],
     nom: "Yellowstone & Parcs de l'Ouest",
     pays: "États-Unis",
     emoji: "🦬",
@@ -4027,6 +4099,10 @@ const DESTINATIONS = [
   // ══════════════════════════════════════════════════════════
   {
     id: "montreal",
+    bons_plans: ["Vieux-Montréal et Vieux-Port à pied", "Mont Royal (vue, gratuit)", "Marché Jean-Talon", "Festivals l'été (Jazz, Osheaga)", "Métro et Bixi (vélos)"],
+    logements: ["Vieux-Montréal / Plateau — 120-220 CAD/nuit", "Plateau Mont-Royal : branché", "Vieux-Montréal : historique", "Mile End : cafés, bagels"],
+    a_savoir: ["Francophone (français québécois)", "Hiver très froid (ville souterraine)", "Pourboire 15-20% + taxes", "Combinable avec Québec (2h30)"],
+    risques: ["Hiver rigoureux (-20°C)", "Taxes non incluses dans les prix", "Été : festivals bondés", "Verglas l'hiver"],
     nom: "Montréal",
     pays: "Canada",
     emoji: "🍁",
@@ -4080,6 +4156,10 @@ const DESTINATIONS = [
   },
   {
     id: "quebec_ville",
+    bons_plans: ["Vieux-Québec (UNESCO) à pied", "Château Frontenac et terrasse Dufferin", "Chutes Montmorency", "Île d'Orléans (produits locaux)", "Carnaval d'hiver (février)"],
+    logements: ["Vieux-Québec / Saint-Roch — 120-220 CAD/nuit", "Vieux-Québec : historique, central", "Saint-Roch : branché, moins cher", "Auberges de charme"],
+    a_savoir: ["Seule ville fortifiée d'Amérique du Nord", "Francophone", "Hiver féérique mais très froid", "Combinable avec Montréal"],
+    risques: ["Hiver très froid (-25°C)", "Rues pentues et glissantes l'hiver", "Taxes ajoutées", "Foule au Carnaval / l'été"],
     nom: "Québec — La Vieille Capitale",
     pays: "Canada",
     emoji: "🏰",
@@ -4133,6 +4213,10 @@ const DESTINATIONS = [
   },
   {
     id: "vancouver",
+    bons_plans: ["Stanley Park (vélo, gratuit)", "Granville Island (marché)", "Grouse Mountain / Capilano (nature)", "Plages gratuites (English Bay)", "Quartier Gastown"],
+    logements: ["Downtown / Kitsilano — 150-280 CAD/nuit", "Downtown : central", "Kitsilano : plages, branché", "Gastown : historique"],
+    a_savoir: ["Nature + ville (montagnes + océan)", "Pluie fréquente (climat doux)", "Base pour Whistler et les Rocheuses", "Multiculturelle"],
+    risques: ["Pluie fréquente", "Prix des hôtels élevés", "Downtown Eastside : à éviter", "Taxes ajoutées"],
     nom: "Vancouver",
     pays: "Canada",
     emoji: "🏔️",
@@ -4186,6 +4270,10 @@ const DESTINATIONS = [
   },
   {
     id: "banff",
+    bons_plans: ["Lacs Louise et Moraine (turquoise)", "Pass Parcs Canada", "Randos et téléphérique (Sulphur Mountain)", "Sources thermales de Banff", "Icefields Parkway (route panoramique vers Jasper)"],
+    logements: ["Banff / Canmore / Lake Louise — 200-400 CAD/nuit", "Banff : central, cher", "Canmore : moins cher, à 20 min", "Réserver très à l'avance"],
+    a_savoir: ["Parc national des Rocheuses", "Ski l'hiver, rando l'été", "Faune (ours, wapitis, cerfs)", "Lac Moraine : navette obligatoire l'été"],
+    risques: ["Ours : nourriture sécurisée, spray anti-ours", "Lac Moraine : accès restreint (navette/réservation)", "Hiver rigoureux, routes verglacées", "Altitude et météo changeante"],
     nom: "Banff & Rocheuses Canadiennes",
     pays: "Canada",
     emoji: "🏔️",
@@ -4241,6 +4329,10 @@ const DESTINATIONS = [
   },
   {
     id: "toronto",
+    bons_plans: ["CN Tower (ou vue gratuite depuis les quais)", "Îles de Toronto en ferry (plages, skyline)", "St. Lawrence Market", "Distillery District", "Chutes du Niagara (1h30) côté canadien"],
+    logements: ["Downtown / West Queen West — 150-280 CAD/nuit", "Downtown : central", "West Queen West : branché", "Kensington : bohème"],
+    a_savoir: ["Ville très multiculturelle", "Presto Card (transports)", "Hiver froid, été chaud/humide", "Niagara plus beau côté canadien"],
+    risques: ["Hiver froid", "Prix élevés en centre", "Taxes ajoutées + pourboire", "Circulation dense"],
     nom: "Toronto",
     pays: "Canada",
     emoji: "🏙️",
