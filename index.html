@@ -198,6 +198,11 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
       <button class="filtre-btn" id="view-continent-btn" onclick="setViewMode('continent')" title="Grouper par continent">🌍 Par continent</button>
     </span>
   </div>
+  <div class="filtres" style="margin-top:10px;align-items:center">
+    <label style="font-size:.78rem;color:var(--muted);font-weight:600">🌍 Filtrer par pays :</label>
+    <select class="sort-select" id="country-filter" onchange="setCountryFilter(this.value)" aria-label="Filtrer par pays" style="min-width:180px"></select>
+    <span id="country-roadtrip-cta"></span>
+  </div>
   <div id="dest-grid"></div>
 </section>
 
@@ -508,6 +513,7 @@ let currentPage = 'dashboard';
 let currentFiltre = 'all';
 let currentSearchQuery = '';
 let currentSort = 'default';
+let currentCountry = 'all';
 let currentDest = null;
 let viewMode = 'grid'; // 'grid' | 'continent'
 let map = null;
@@ -1679,6 +1685,7 @@ function setViewMode(mode) {
 
 // ── DESTINATIONS GRID ──────────────────────────────────
 function buildDestGrid() {
+  buildCountryFilter();
   renderDestGrid();
   document.getElementById('dest-count').textContent = DESTINATIONS.length + ' destinations';
 }
@@ -1705,11 +1712,14 @@ function destCardHTML(d, match) {
 function renderDestGrid() {
   const q = currentSearchQuery.toLowerCase();
   const archivedSet = new Set(getArchivedIds());
-  let list = DESTINATIONS.filter(d => !archivedSet.has(d.id)).filter(d => {
-    if(currentFiltre === 'all') return true;
-    if(['plage','ville','nature','culture','randonnee'].includes(currentFiltre)) return (d.type||[]).includes(currentFiltre);
-    return d.statut === currentFiltre;
-  }).filter(d => !q || d.nom.toLowerCase().includes(q) || d.pays.toLowerCase().includes(q) || (d.type||[]).some(t=>t.includes(q)));
+  let list = DESTINATIONS.filter(d => !archivedSet.has(d.id))
+    .filter(d => currentCountry === 'all' || d.pays === currentCountry)
+    .filter(d => {
+      if(currentFiltre === 'all') return true;
+      if(['plage','ville','nature','culture','randonnee'].includes(currentFiltre)) return (d.type||[]).includes(currentFiltre);
+      return d.statut === currentFiltre;
+    }).filter(d => !q || d.nom.toLowerCase().includes(q) || d.pays.toLowerCase().includes(q) || (d.type||[]).some(t=>t.includes(q)));
+  updateCountryCta();
 
   const advActive = advFilter.budget != null || advFilter.depart || advFilter.retour;
   const grid = document.getElementById('dest-grid');
@@ -1781,6 +1791,45 @@ function setSort(v) {
   renderDestGrid();
 }
 
+// ── FILTRE PAR PAYS (pour composer un road trip) ──
+function buildCountryFilter() {
+  const sel = document.getElementById('country-filter');
+  if (!sel) return;
+  const archived = new Set(getArchivedIds());
+  const counts = {};
+  DESTINATIONS.filter(d => !archived.has(d.id)).forEach(d => { counts[d.pays] = (counts[d.pays] || 0) + 1; });
+  const countries = Object.keys(counts).sort((a, b) => a.localeCompare(b, 'fr'));
+  sel.innerHTML = `<option value="all">Tous les pays (${DESTINATIONS.length})</option>` +
+    countries.map(c => `<option value="${escHtml(c)}">${escHtml(c)} (${counts[c]})</option>`).join('');
+  sel.value = currentCountry;
+}
+function setCountryFilter(v) {
+  currentCountry = v;
+  sessionStorage.setItem('vm_country', v);
+  if (v !== 'all' && viewMode === 'continent') { viewMode = 'grid'; document.getElementById('view-grid-btn')?.classList.add('active'); document.getElementById('view-continent-btn')?.classList.remove('active'); }
+  renderDestGrid();
+}
+function updateCountryCta() {
+  const cta = document.getElementById('country-roadtrip-cta');
+  if (!cta) return;
+  if (currentCountry === 'all') { cta.innerHTML = ''; return; }
+  const archived = new Set(getArchivedIds());
+  const n = DESTINATIONS.filter(d => d.pays === currentCountry && !archived.has(d.id)).length;
+  cta.innerHTML = n >= 2
+    ? `<button class="btn btn-success btn-sm" onclick="rtFromCountry('${escHtml(currentCountry)}')">🚗 Road trip ${escHtml(currentCountry)} (${n} étapes)</button>`
+    : '';
+}
+function rtFromCountry(pays) {
+  const archived = new Set(getArchivedIds());
+  const dests = DESTINATIONS.filter(d => d.pays === pays && !archived.has(d.id))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+  if (!dests.length) return;
+  openRoadtripEditor();
+  _rtDraft.nom = 'Road trip ' + pays;
+  dests.forEach(d => _rtDraft.stops.push({ id: rtNewId(), nom: d.nom, destId: d.id, coords: d.coords ? [d.coords[0], d.coords[1]] : null, nights: 2, note: '' }));
+  renderRtEditor();
+}
+
 function setFiltre(f) {
   currentFiltre = f;
   sessionStorage.setItem('vm_filtre', f);
@@ -1801,6 +1850,8 @@ function restoreFilters() {
   if (f) { currentFiltre = f; document.querySelectorAll('.filtre-btn').forEach(b => b.classList.toggle('active', b.dataset.filtre === f)); }
   const q = sessionStorage.getItem('vm_search');
   if (q) { currentSearchQuery = q; const inp = document.querySelector('.search-input'); if (inp) inp.value = q; }
+  const co = sessionStorage.getItem('vm_country');
+  if (co) currentCountry = co;
   const s = sessionStorage.getItem('vm_sort');
   if (s) { currentSort = s; const sel = document.getElementById('sort-select'); if (sel) sel.value = s; }
 }
