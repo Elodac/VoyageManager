@@ -1805,6 +1805,20 @@ function restoreFilters() {
   if (s) { currentSort = s; const sel = document.getElementById('sort-select'); if (sel) sel.value = s; }
 }
 
+// Lien de réservation/billetterie pour un lieu : réel s'il existe, sinon recherche billetterie
+function poiBookingUrl(p, dest) {
+  if (p.lien) return p.lien;
+  if (p.site) return p.site;
+  const ville = dest ? dest.nom.split('—')[0].trim() : '';
+  return 'https://www.getyourguide.fr/s/?q=' + encodeURIComponent((p.nom || '') + ' ' + ville);
+}
+// Lien de réservation pour un restaurant : site réel sinon recherche « réserver »
+function restoBookingUrl(r, dest) {
+  if (r.site) return r.site;
+  const ville = dest ? dest.nom.split('—')[0].trim() : '';
+  return 'https://www.google.com/search?q=' + encodeURIComponent('réserver ' + (r.nom || '') + ' ' + ville);
+}
+
 // Rend une liste titrée (bons plans / logement / à savoir / risques)
 function ficheList(title, items, tone) {
   if (!items || !items.length) return '';
@@ -1918,7 +1932,7 @@ function openDest(id) {
             <div class="poi-prix">${p.prix||''}</div>
             ${p.horaires?`<div class="hours-badge">🕐 ${p.horaires}</div>`:''}
             <div class="detail-actions">
-              ${(p.lien||p.site)?`<a class="mini-btn" href="${p.lien||p.site}" target="_blank">🎟️ Billetterie / infos</a>`:''}
+              <a class="mini-btn" href="${poiBookingUrl(p, d)}" target="_blank">🎟️ Réserver / billetterie</a>
               ${p.tel?`<a class="mini-btn tel" href="tel:${p.tel.replace(/\s/g,'')}">📞 ${p.tel}</a>`:''}
               <a class="mini-btn" href="${mapsLink(p)}" target="_blank">🗺️ Itinéraire</a>
             </div>
@@ -1949,7 +1963,7 @@ function openDest(id) {
           <div style="font-size:.78rem;color:var(--green)">${r.prix||''}</div>
           ${r.horaires?`<div class="hours-badge">🕐 ${r.horaires}</div>`:''}
           <div class="detail-actions">
-            ${r.site?`<a class="mini-btn" href="${r.site}" target="_blank">🌐 Site / réserver</a>`:''}
+            <a class="mini-btn" href="${restoBookingUrl(r, d)}" target="_blank">🍽️ Réserver</a>
             ${r.tel?`<a class="mini-btn tel" href="tel:${r.tel.replace(/\s/g,'')}">📞 ${r.tel}</a>`:''}
             <a class="mini-btn" href="${mapsLink(r, d)}" target="_blank">🗺️ Voir sur la carte</a>
           </div>
