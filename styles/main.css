@@ -542,6 +542,53 @@ body:has(#page-transport.active) main{max-width:1600px}
 .budget-over{color:#ef4444!important}
 .budget-ok{color:var(--green)!important}
 
+/* ── ACCUEIL PROFILS (Netflix) ───────────────────────────── */
+.profile-gate{position:fixed;inset:0;z-index:1000;background:radial-gradient(1200px 600px at 50% -10%, #182136 0%, var(--bg) 60%);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.profile-gate[hidden]{display:none}
+.pg-inner{width:100%;max-width:900px;text-align:center}
+.pg-logo{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;margin-bottom:34px}
+.pg-logo span{color:var(--accent)}
+.pg-title{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:700;margin-bottom:40px;color:#fff}
+.pg-profiles{display:flex;flex-wrap:wrap;gap:clamp(16px,3vw,34px);justify-content:center}
+#pg-profiles.hidden,#pg-password.hidden{display:none}
+.pg-profile{background:transparent;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;width:clamp(104px,15vw,150px);transition:transform .2s ease}
+.pg-profile:hover,.pg-profile:focus-visible{transform:translateY(-6px) scale(1.05)}
+.pg-avatar{width:clamp(96px,13vw,132px);height:clamp(96px,13vw,132px);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(2.6rem,6vw,3.6rem);border:3px solid transparent;box-shadow:0 10px 30px #0006;transition:border-color .2s,box-shadow .2s;background:var(--bg2)}
+.pg-profile:hover .pg-avatar,.pg-profile:focus-visible .pg-avatar{border-color:#fff;box-shadow:0 14px 40px #0009}
+.pg-name{font-size:1rem;font-weight:600;color:var(--muted);transition:color .2s}
+.pg-profile:hover .pg-name{color:#fff}
+.pg-lock{font-size:.7rem;color:var(--muted)}
+.pg-password{max-width:360px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:12px}
+.pg-pw-avatar{width:96px;height:96px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;background:var(--bg2);border:3px solid var(--accent)}
+.pg-pw-name{font-size:1.3rem;font-weight:700;color:#fff}
+.pg-pw-sub{font-size:.85rem;color:var(--muted)}
+.pg-pw-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:1rem;outline:none;text-align:center}
+.pg-pw-input:focus{border-color:var(--accent)}
+.pg-pw-err{font-size:.82rem;color:var(--red);min-height:1em}
+.pg-pw-actions{display:flex;gap:10px;margin-top:4px}
+
+/* ── PROFIL DANS LA SIDEBAR ───────────────────────────────── */
+.sidebar-profile{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px;border-radius:10px;background:var(--bg3)}
+.sp-avatar{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;background:var(--bg2)}
+.sp-info{flex:1;min-width:0}
+.sp-name{font-size:.86rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-role{font-size:.68rem;color:var(--muted)}
+.sp-actions{display:flex;gap:2px;flex-shrink:0}
+.sp-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;padding:4px;border-radius:6px}
+.sp-btn:hover{background:var(--bg2);color:var(--text)}
+
+/* Éléments réservés à l'admin */
+.admin-only{display:none}
+body.role-admin .nav-btn.admin-only{display:flex}
+body.role-admin .admin-only.admin-inline{display:inline-flex}
+
+/* ── HISTORIQUE ──────────────────────────────────────────── */
+.hist-item{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:6px;font-size:.85rem}
+.hist-ico{font-size:1.1rem;flex-shrink:0}
+.hist-main{flex:1;min-width:0}
+.hist-who{font-weight:600}
+.hist-when{font-size:.72rem;color:var(--muted);flex-shrink:0}
+
 /* ── ÉPINGLÉS (page d'accueil) — drag & drop ─────────────── */
 .hero-plan{background:linear-gradient(135deg,#0f2d44 0%,#231b3d 100%);border-color:#6366f155}
 .hero-plan::before{background:radial-gradient(circle,#6366f11f 0%,transparent 70%)}

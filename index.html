@@ -17,6 +17,78 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 </head>
 <body>
 
+<!-- ══ NOYAU PROFILS & STOCKAGE PAR PROFIL (doit s'exécuter avant tout accès au stockage) ══ -->
+<script>
+(function(){
+  // Données GLOBALES : liste des profils (extensible). role = admin | user.
+  window.VM_PROFILES = [
+    { id:'clement', nom:'Clément', avatar:'🧭', role:'admin', color:'#3b82f6', password:true },
+    { id:'heloise', nom:'Héloïse', avatar:'🌸', role:'user',  color:'#ec4899' },
+    { id:'maxence', nom:'Maxence', avatar:'🎮', role:'user',  color:'#22c55e' },
+    { id:'lucie',   nom:'Lucie',   avatar:'🦋', role:'user',  color:'#a855f7' },
+    { id:'coraly',  nom:'Coraly',  avatar:'🌊', role:'user',  color:'#06b6d4' },
+    { id:'claire',  nom:'Claire',  avatar:'☀️', role:'user',  color:'#f59e0b' },
+  ];
+  // Clés NON namespacées (partagées / techniques)
+  var GLOBAL_KEYS = { 'vm_active_profile':1, 'vm_auth':1, 'vm_history':1, 'vm_global_dests':1,
+                      'vm_migrated_v1':1, 'vm_pwhash_clement':1 };
+  var USER_PREFIXES = ['vm_', 'voyagemanager_', 'todos_'];
+  function isUserKey(k){
+    if(!k || GLOBAL_KEYS[k]) return false;
+    if(k.indexOf('u:') === 0) return false;
+    for(var i=0;i<USER_PREFIXES.length;i++){ if(k.indexOf(USER_PREFIXES[i]) === 0) return true; }
+    return false;
+  }
+  var raw = window.localStorage;
+  var P = Storage.prototype;
+  var g = P.getItem, s = P.setItem, r = P.removeItem; // originaux
+  // Accès brut (non namespacé) exposé pour le noyau
+  window.__rawLS = {
+    get:function(k){ return g.call(raw,k); },
+    set:function(k,v){ return s.call(raw,k,v); },
+    remove:function(k){ return r.call(raw,k); },
+    keys:function(){ var a=[]; for(var i=0;i<raw.length;i++) a.push(raw.key(i)); return a; }
+  };
+  // Profil actif (défaut : clement, propriétaire des données existantes)
+  window.__profile = window.__rawLS.get('vm_active_profile') || 'clement';
+  function nk(k){ return (window.__profile && isUserKey(k)) ? ('u:'+window.__profile+':'+k) : k; }
+  // Override transparent : toute clé "user" est namespacée par profil (local + session storage)
+  P.getItem    = function(k){ return g.call(this, nk(k)); };
+  P.setItem    = function(k,v){ return s.call(this, nk(k), v); };
+  P.removeItem = function(k){ return r.call(this, nk(k)); };
+  // Migration unique : données historiques (non namespacées) → profil "clement"
+  if(!window.__rawLS.get('vm_migrated_v1')){
+    window.__rawLS.keys().slice().forEach(function(k){
+      if(isUserKey(k)){
+        var val = window.__rawLS.get(k);
+        if(val != null){ window.__rawLS.set('u:clement:'+k, val); window.__rawLS.remove(k); }
+      }
+    });
+    window.__rawLS.set('vm_migrated_v1','1');
+  }
+})();
+</script>
+
+<!-- ══ ACCUEIL PROFILS (façon Netflix) ══ -->
+<div class="profile-gate" id="profile-gate" hidden>
+  <div class="pg-inner">
+    <div class="pg-logo">✈️ <span>Voyage</span>Manager</div>
+    <h1 class="pg-title" id="pg-title">Qui voyage ?</h1>
+    <div class="pg-profiles" id="pg-profiles"></div>
+    <div class="pg-password hidden" id="pg-password">
+      <div class="pg-pw-avatar" id="pg-pw-avatar"></div>
+      <div class="pg-pw-name" id="pg-pw-name"></div>
+      <div class="pg-pw-sub" id="pg-pw-sub"></div>
+      <input type="password" id="pg-pw-input" class="pg-pw-input" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')pgSubmitPassword()">
+      <div class="pg-pw-err" id="pg-pw-err"></div>
+      <div class="pg-pw-actions">
+        <button class="btn btn-primary" id="pg-pw-btn" onclick="pgSubmitPassword()">Entrer</button>
+        <button class="btn btn-outline" onclick="pgBack()">← Changer de profil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <button class="sidebar-toggle" onclick="toggleNav()" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleNav()"></div>
 
@@ -35,8 +107,22 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     <button class="nav-btn" onclick="showPage('budget')">💶 <span>Budget</span></button>
     <button class="nav-btn" onclick="showPage('archives')">🗄️ <span>Archives</span></button>
     <button class="nav-btn" onclick="showPage('ajouter')">➕ <span>Ajouter</span></button>
+    <button class="nav-btn admin-only" onclick="showPage('historique')">🕓 <span>Historique</span></button>
   </nav>
-  <div class="sidebar-footer"><span class="nav-badge" id="nav-badge"></span></div>
+  <div class="sidebar-footer">
+    <span class="nav-badge" id="nav-badge"></span>
+    <div class="sidebar-profile" id="sidebar-profile">
+      <div class="sp-avatar" id="sp-avatar"></div>
+      <div class="sp-info">
+        <div class="sp-name" id="sp-name"></div>
+        <div class="sp-role" id="sp-role"></div>
+      </div>
+      <div class="sp-actions">
+        <button class="sp-btn" id="sp-pwd-btn" onclick="pgChangePassword()" title="Changer le mot de passe" aria-label="Changer le mot de passe" hidden>🔑</button>
+        <button class="sp-btn" onclick="vmLogout()" title="Changer de profil / déconnexion" aria-label="Déconnexion">🚪</button>
+      </div>
+    </div>
+  </div>
 </aside>
 
 <main>
@@ -131,6 +217,19 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     et l'itinéraire s'affiche sur la carte.
   </p>
   <div id="roadtrips-mount"></div>
+</section>
+
+<!-- ══ PAGE : HISTORIQUE (admin) ═════════════════════ -->
+<section class="page" id="page-historique">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;flex-wrap:wrap">
+    <h1 style="font-size:1.4rem;font-weight:700">🕓 Historique d'activité</h1>
+    <span style="color:var(--muted);font-size:.85rem" id="historique-count"></span>
+    <button class="btn btn-outline btn-sm" onclick="clearHistory()" style="margin-left:auto">🧹 Vider</button>
+  </div>
+  <p style="color:var(--muted);font-size:.85rem;margin-bottom:18px;max-width:720px">
+    Journal des créations et modifications (qui, quand, quoi). Base pour un futur journal d'activité et une restauration.
+  </p>
+  <div id="historique-mount"></div>
 </section>
 
 <!-- ══ PAGE : DESTINATIONS ═══════════════════════════ -->
@@ -521,6 +620,157 @@ let mapMarkers = [];
 let poiMarkers = [];
 let valiseState = {}; // { dest_id: { cat: { item: checked } } }
 
+// ════════════════════════════════════════════════════════
+//  PROFILS · AUTHENTIFICATION · RÔLES · HISTORIQUE
+// ════════════════════════════════════════════════════════
+let _pgPending = null;
+function vmProfile(id) { return (window.VM_PROFILES || []).find(p => p.id === id); }
+function vmCurrentProfile() { return vmProfile(window.__profile) || (window.VM_PROFILES || [])[0]; }
+function isAdmin() { return (vmCurrentProfile() || {}).role === 'admin'; }
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function pgRenderProfiles() {
+  const box = document.getElementById('pg-profiles'); if (!box) return;
+  document.getElementById('pg-password').classList.add('hidden');
+  box.classList.remove('hidden');
+  document.getElementById('pg-title').textContent = 'Qui voyage ?';
+  box.innerHTML = (window.VM_PROFILES || []).map(p => `
+    <button class="pg-profile" onclick="pgSelect('${p.id}')" aria-label="Profil ${escHtml(p.nom)}">
+      <div class="pg-avatar" style="background:${p.color}22;border-color:${p.color}55">${p.avatar}</div>
+      <div class="pg-name">${escHtml(p.nom)}</div>
+      ${p.password ? '<div class="pg-lock">🔒 protégé</div>' : ''}
+    </button>`).join('');
+}
+
+function pgSelect(id) {
+  const p = vmProfile(id); if (!p) return;
+  if (p.password) {
+    _pgPending = id;
+    const hasHash = !!window.__rawLS.get('vm_pwhash_' + id);
+    document.getElementById('pg-profiles').classList.add('hidden');
+    document.getElementById('pg-password').classList.remove('hidden');
+    const av = document.getElementById('pg-pw-avatar');
+    av.textContent = p.avatar; av.style.background = p.color + '22'; av.style.borderColor = p.color;
+    document.getElementById('pg-pw-name').textContent = p.nom;
+    document.getElementById('pg-pw-sub').textContent = hasHash ? 'Entre ton mot de passe' : 'Crée ton mot de passe (1re connexion)';
+    document.getElementById('pg-pw-btn').textContent = hasHash ? 'Entrer' : 'Créer';
+    document.getElementById('pg-title').textContent = p.nom;
+    const inp = document.getElementById('pg-pw-input'); inp.value = '';
+    document.getElementById('pg-pw-err').textContent = '';
+    setTimeout(() => inp.focus(), 60);
+  } else {
+    vmAuthenticate(id);
+  }
+}
+
+async function pgSubmitPassword() {
+  const id = _pgPending; if (!id) return;
+  const inp = document.getElementById('pg-pw-input'), err = document.getElementById('pg-pw-err');
+  const val = inp.value;
+  if (!val || val.length < 3) { err.textContent = 'Mot de passe trop court (min. 3 caractères).'; return; }
+  const key = 'vm_pwhash_' + id, existing = window.__rawLS.get(key), hash = await sha256(val);
+  if (existing) {
+    if (hash === existing) vmAuthenticate(id);
+    else { err.textContent = 'Mot de passe incorrect.'; inp.select(); }
+  } else {
+    window.__rawLS.set(key, hash);
+    logHistory('mot de passe créé', vmProfile(id).nom);
+    vmAuthenticate(id);
+  }
+}
+function pgBack() { _pgPending = null; pgRenderProfiles(); }
+
+function vmAuthenticate(id) {
+  sessionStorage.setItem('vm_auth', id);
+  logHistory('connexion', vmProfile(id).nom);
+  if (id === window.__profile) {
+    document.getElementById('profile-gate').setAttribute('hidden', '');
+    applyRole(); updateProfileIndicator();
+    if (typeof maybeShowOnboarding === 'function') maybeShowOnboarding();
+    showToast('👋 Bienvenue ' + vmProfile(id).nom + ' !');
+  } else {
+    window.__rawLS.set('vm_active_profile', id);
+    location.reload();
+  }
+}
+function vmLogout() { sessionStorage.removeItem('vm_auth'); location.reload(); }
+
+async function pgChangePassword() {
+  const p = vmCurrentProfile(); if (!p.password) return;
+  const stored = window.__rawLS.get('vm_pwhash_' + p.id);
+  if (stored) {
+    const cur = prompt('Mot de passe actuel :'); if (cur === null) return;
+    if (await sha256(cur) !== stored) { showToast('❌ Mot de passe actuel incorrect'); return; }
+  }
+  const nw = prompt('Nouveau mot de passe (min. 3 caractères) :');
+  if (nw === null) return;
+  if (nw.length < 3) { showToast('Trop court'); return; }
+  window.__rawLS.set('vm_pwhash_' + p.id, await sha256(nw));
+  logHistory('mot de passe modifié', p.nom);
+  showToast('🔑 Mot de passe mis à jour');
+}
+
+function applyRole() {
+  const p = vmCurrentProfile();
+  document.body.classList.toggle('role-admin', p.role === 'admin');
+  document.body.classList.toggle('role-user', p.role !== 'admin');
+  const pwBtn = document.getElementById('sp-pwd-btn'); if (pwBtn) pwBtn.hidden = !p.password;
+}
+function updateProfileIndicator() {
+  const p = vmCurrentProfile();
+  const av = document.getElementById('sp-avatar'); if (av) { av.textContent = p.avatar; av.style.background = p.color + '22'; }
+  const nm = document.getElementById('sp-name'); if (nm) nm.textContent = p.nom;
+  const rl = document.getElementById('sp-role'); if (rl) rl.textContent = p.role === 'admin' ? 'Administrateur' : 'Voyageur';
+}
+
+function vmAuthBoot() {
+  pgRenderProfiles();
+  applyRole(); updateProfileIndicator();
+  const gate = document.getElementById('profile-gate');
+  if (sessionStorage.getItem('vm_auth') === window.__profile) gate.setAttribute('hidden', '');
+  else gate.removeAttribute('hidden');
+}
+
+// ── HISTORIQUE (global, partagé) ──
+const HIST_KEY = 'vm_history';
+function getHistory() { try { return JSON.parse(window.__rawLS.get(HIST_KEY) || '[]'); } catch(e) { return []; } }
+function logHistory(action, target) {
+  try {
+    const cp = vmCurrentProfile() || {};
+    const h = getHistory();
+    h.unshift({ user: cp.nom || '?', role: cp.role || '', action: action, target: target || '', ts: Date.now() });
+    if (h.length > 500) h.length = 500;
+    window.__rawLS.set(HIST_KEY, JSON.stringify(h));
+    if (currentPage === 'historique') buildHistorique();
+  } catch(e) {}
+}
+function clearHistory() { if (!confirm('Vider tout l\'historique d\'activité ?')) return; window.__rawLS.set(HIST_KEY, '[]'); buildHistorique(); }
+function buildHistorique() {
+  const mount = document.getElementById('historique-mount'); if (!mount) return;
+  const h = getHistory();
+  const cnt = document.getElementById('historique-count'); if (cnt) cnt.textContent = h.length + ' entrée' + (h.length > 1 ? 's' : '');
+  if (!h.length) { mount.innerHTML = '<div class="pin-empty">Aucune activité enregistrée pour le moment.</div>'; return; }
+  const fmt = ts => { const d = new Date(ts); return d.toLocaleDateString('fr-FR') + ' · ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); };
+  mount.innerHTML = h.slice(0, 300).map(e => `
+    <div class="hist-item">
+      <span class="hist-ico">${e.role === 'admin' ? '🧭' : '👤'}</span>
+      <div class="hist-main"><span class="hist-who">${escHtml(e.user)}</span> — ${escHtml(e.action)}${e.target ? ' : <strong>' + escHtml(e.target) + '</strong>' : ''}</div>
+      <span class="hist-when">${fmt(e.ts)}</span>
+    </div>`).join('');
+}
+
+// ── DESTINATIONS GLOBALES (admin, partagées entre tous) ──
+const GLOBAL_DESTS_KEY = 'vm_global_dests';
+function getGlobalDests() { try { return JSON.parse(window.__rawLS.get(GLOBAL_DESTS_KEY) || '[]'); } catch(e) { return []; } }
+function setGlobalDests(a) { window.__rawLS.set(GLOBAL_DESTS_KEY, JSON.stringify(a)); }
+function applyGlobalDests() {
+  getGlobalDests().forEach(d => { if (!DESTINATIONS.some(x => x.id === d.id)) { d.scope = 'global'; d.custom = true; DESTINATIONS.push(d); } });
+}
+
 // ── CONTINENTS ─────────────────────────────────────────
 const CONTINENT_MAP = {
   'Grèce':'Europe','Portugal':'Europe','Italie':'Europe','France':'Europe',
@@ -564,6 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadState();
   agLoadState();
   if (window.loadStore) { try { loadStore(); } catch(e) {} } // trips dispo avant le rendu des épinglés
+  applyGlobalDests();     // destinations communes (admin) partagées entre tous
   applyStatutOverrides(); // catégories personnalisées par l'utilisateur
   restoreFilters();
   buildPinned();
@@ -582,7 +833,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initSecurityHardening();
   initKeyboardShortcuts();
   const savedPage = sessionStorage.getItem('vm_page');
-  if(savedPage && document.getElementById('page-' + savedPage)) showPage(savedPage);
+  if(savedPage && document.getElementById('page-' + savedPage) && !document.getElementById('page-' + savedPage).classList.contains('admin-gated')) showPage(savedPage);
+  vmAuthBoot(); // accueil profils + application du rôle
 });
 
 // ── DURCISSEMENT SÉCURITÉ ──────────────────────────────
@@ -696,7 +948,9 @@ function toggleNav() {
   if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
+const ADMIN_PAGES = ['historique'];
 function showPage(id) {
+  if (ADMIN_PAGES.includes(id) && !isAdmin()) { showToast('🔒 Réservé à l\'administrateur'); id = 'dashboard'; }
   document.body.classList.remove('nav-open');
   const b = document.querySelector('.sidebar-toggle');
   if (b) b.setAttribute('aria-expanded', 'false');
@@ -713,6 +967,7 @@ function showPage(id) {
   }
   if(id === 'archives') buildArchives();
   if(id === 'roadtrips') buildRoadtrips();
+  if(id === 'historique') buildHistorique();
 }
 
 // ── COUNTDOWN ──────────────────────────────────────────
@@ -962,24 +1217,29 @@ function createVoyageFromDest(id) {
   // Ouvre la préparation guidée
   const t = (typeof getTripByDestination === 'function') ? getTripByDestination(id) : null;
   if (t && window.openTripModal) openTripModal(t.id); else openDest(id);
+  logHistory('voyage créé', d.nom);
   showToast('🧳 Voyage créé — complète sa préparation !');
 }
 
 // ── SUPPRIMER / MODIFIER une destination ajoutée ──
 function deleteDestination(id) {
   const d = DESTINATIONS.find(x => x.id === id); if (!d) return;
-  if (!d.custom) { showToast('Seules les destinations que tu as ajoutées peuvent être supprimées'); return; }
+  if (!d.custom) { showToast('Seules les destinations ajoutées peuvent être supprimées'); return; }
+  if (d.scope === 'global' && !isAdmin()) { showToast('🔒 Destination commune : suppression réservée à l\'administrateur'); return; }
   if (!confirm(`Supprimer définitivement la destination « ${d.nom} » ?`)) return;
   setPinnedIds(getPinnedIds().filter(x => x !== id));
   setArchivedIds(getArchivedIds().filter(x => x !== id));
   const o = getStatutOverrides(); delete o[id]; lsSafe(STATUT_OVERRIDE_KEY, o);
+  if (d.scope === 'global') { setGlobalDests(getGlobalDests().filter(x => x.id !== id)); }
   if (typeof removeUserDestination === 'function') removeUserDestination(id);
   closeModal();
   buildPinned(); buildDashboard(); buildBudget(); renderDestGrid();
+  logHistory('destination supprimée', d.nom);
   showToast('🗑️ Destination supprimée');
 }
 function editDestination(id) {
   const d = DESTINATIONS.find(x => x.id === id); if (!d || !d.custom) return;
+  if (d.scope === 'global' && !isAdmin()) { showToast('🔒 Destination commune : modification réservée à l\'administrateur'); return; }
   let ov = document.getElementById('edit-dest-overlay');
   if (!ov) {
     ov = document.createElement('div'); ov.id = 'edit-dest-overlay'; ov.className = 'modal-overlay hidden';
@@ -1014,10 +1274,18 @@ function saveEditDestination(id) {
     emoji: (g('ed-emoji') || '🧭').trim(), budget_min: +g('ed-bmin') || 0, budget_max: +g('ed-bmax') || 0,
     description: (g('ed-desc') || '').trim(),
   };
-  if (typeof updateUserDestination === 'function') updateUserDestination(id, patch);
+  const d0 = DESTINATIONS.find(x => x.id === id);
+  if (d0 && d0.scope === 'global') {
+    Object.assign(d0, patch);
+    const gd = getGlobalDests(); const gi = gd.findIndex(x => x.id === id);
+    if (gi >= 0) { Object.assign(gd[gi], patch); setGlobalDests(gd); }
+  } else if (typeof updateUserDestination === 'function') {
+    updateUserDestination(id, patch);
+  }
   const ov = document.getElementById('edit-dest-overlay'); if (ov) ov.classList.add('hidden');
   buildPinned(); buildDashboard(); buildBudget(); renderDestGrid();
   openDest(id);
+  logHistory('destination modifiée', patch.nom);
   showToast('✅ Destination modifiée');
 }
 
@@ -1222,6 +1490,7 @@ function rtSave(showMap) {
   setRoadtrips(all);
   const ov = document.getElementById('roadtrip-overlay'); if (ov) ov.classList.add('hidden');
   buildRoadtrips();
+  logHistory('road trip', nom);
   showToast('🚗 Road trip enregistré');
   if (showMap) showRoadtripOnMap(_rtDraft.id);
 }
@@ -1957,7 +2226,7 @@ function openDest(id) {
       <button class="btn btn-outline btn-sm" onclick="closeModal();showPage('carte');setTimeout(()=>focusMap('${d.id}'),400)">📍 Sur la carte</button>
       <button class="btn btn-outline btn-sm" onclick="rtQuickAdd('${d.id}')">🚗 Road trip</button>
       <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${d.routard&&d.routard.url ? d.routard.url : 'https://www.google.com/search?q='+encodeURIComponent('guide du routard '+d.nom)}">🧭 Guide du Routard</a>
-      ${d.custom ? `<button class="btn btn-outline btn-sm" onclick="editDestination('${escHtml(d.id)}')">✏️ Modifier</button>
+      ${d.custom && (d.scope !== 'global' || isAdmin()) ? `<button class="btn btn-outline btn-sm" onclick="editDestination('${escHtml(d.id)}')">✏️ Modifier</button>
       <button class="btn btn-sm" style="background:#3b1111;color:#f87171;border:1px solid #7f1d1d" onclick="deleteDestination('${escHtml(d.id)}')">🗑️ Supprimer</button>` : ''}
     </div>
   `;
@@ -3663,11 +3932,15 @@ function trackerDeleteExpense(id) {
 }
 
 // Export / Import JSON
-document.addEventListener('DOMContentLoaded', () => {
-  // Onboarding première visite
-  if(!localStorage.getItem('vm_onboarded')) {
-    setTimeout(() => document.getElementById('onboarding-overlay')?.classList.remove('hidden'), 600);
+function maybeShowOnboarding() {
+  if (sessionStorage.getItem('vm_auth') !== window.__profile) return; // pas avant la connexion
+  if (!localStorage.getItem('vm_onboarded')) {
+    setTimeout(() => document.getElementById('onboarding-overlay')?.classList.remove('hidden'), 400);
   }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  // Onboarding première visite (uniquement une fois connecté)
+  maybeShowOnboarding();
 
   // Budget tracker init
   trackerLoad();

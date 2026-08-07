@@ -96,6 +96,11 @@ function destForm() {
       <textarea class="add-item-input" id="fd-desc" rows="2" placeholder="Quelques lignes sur la destination…"></textarea></div>
     <div class="adv-field" style="margin-top:10px"><label>Conseils</label>
       <textarea class="add-item-input" id="fd-conseils" rows="2" placeholder="Astuces, à savoir…"></textarea></div>
+    <div class="admin-only" style="margin-top:12px">
+      <label style="display:flex;gap:8px;align-items:center;font-size:.84rem;text-transform:none;color:var(--text)">
+        <input type="checkbox" id="fd-global"> 🌍 Destination <strong>commune</strong> (visible par tous les profils) — sinon elle reste personnelle
+      </label>
+    </div>
     <div style="margin-top:14px"><button class="btn btn-success" id="fd-save">✅ Ajouter la destination</button></div>
     <div id="fd-msg" style="margin-top:10px"></div>
   </div>`;
@@ -307,8 +312,23 @@ function saveDest() {
     climat: val('fd-climat'), description: val('fd-desc'), conseils_perso: val('fd-conseils'),
     type: [], pois: [], gastronomie: [], liens: [], custom: true,
   };
-  addUserDestination(dest);
-  msg.innerHTML = `<div class="info-box success">✅ « ${emoji} ${ville} » ajoutée au catalogue.
+  // Admin + case cochée → destination commune (partagée) ; sinon personnelle
+  const asGlobal = window.isAdmin && window.isAdmin() && document.getElementById('fd-global') && document.getElementById('fd-global').checked;
+  if (asGlobal) {
+    dest.scope = 'global';
+    const gd = window.getGlobalDests ? window.getGlobalDests() : [];
+    gd.push(dest);
+    window.setGlobalDests && window.setGlobalDests(gd);
+    if (window.DESTINATIONS && !window.DESTINATIONS.some(d => d.id === dest.id)) window.DESTINATIONS.push(dest);
+    window.buildDestGrid && window.buildDestGrid();
+    window.buildPinned && window.buildPinned();
+    window.logHistory && window.logHistory('destination commune ajoutée', ville);
+  } else {
+    dest.scope = 'personal';
+    addUserDestination(dest);
+    window.logHistory && window.logHistory('destination personnelle ajoutée', ville);
+  }
+  msg.innerHTML = `<div class="info-box success">✅ « ${emoji} ${ville} » ajoutée${asGlobal ? ' aux destinations <strong>communes</strong>' : ' à tes destinations'}.
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
       <button class="mini-btn" id="fd-open">Voir la fiche</button>
       <button class="mini-btn" id="fd-trip">🧳 Créer un voyage</button>
