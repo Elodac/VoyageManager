@@ -115,6 +115,42 @@ function startInlineEdit(el, id) {
   input.addEventListener('blur', () => finish(true));
 }
 
+// Section « Choisir son logement » : outils de recherche + fiche saisie par l'utilisateur
+function lodgingSectionHTML(t) {
+  const h = t.hebergement || {};
+  const dest = (window.DESTINATIONS || []).find(d => d.id === t.destinationId) || {};
+  const cityRaw = (dest.nom || t.nom || '').split('—')[0].trim();
+  const city = encodeURIComponent(cityRaw + ' ' + (t.pays || dest.pays || ''));
+  const ci = t.date_depart || '', co = t.date_retour || '';
+  const tools = [
+    ['🅱️ Booking', `https://www.booking.com/searchresults.fr.html?ss=${city}&checkin=${ci}&checkout=${co}&group_adults=2`],
+    ['🏠 Airbnb', `https://www.airbnb.fr/s/${city}/homes${ci ? '?checkin=' + ci + '&checkout=' + co + '&adults=2' : ''}`],
+    ['🏨 Hotels.com', `https://fr.hotels.com/search.do?q-destination=${city}${ci ? '&q-check-in=' + ci + '&q-check-out=' + co : ''}`],
+    ['🔷 Google Hotels', `https://www.google.com/travel/search?q=${city}%20h%C3%B4tel`],
+    ['🟡 Expedia', `https://www.expedia.fr/Hotel-Search?destination=${city}${ci ? '&startDate=' + ci + '&endDate=' + co : ''}`],
+    ['🟧 Abritel', `https://www.abritel.fr/search?q=${city}${ci ? '&startDate=' + ci + '&endDate=' + co : ''}`],
+  ];
+  const opts = ELEMENT_STATUS['hebergement'];
+  const F = (id, ph, val, type) => `<input id="${id}" class="add-item-input lg-field" type="${type || 'text'}" placeholder="${ph}" value="${_esc(val || '')}">`;
+  return `
+    <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 8px">🏨 Choisir son logement</h3>
+    <div class="lodging-tools">${tools.map(x => `<a class="mini-btn" target="_blank" rel="noopener" href="${x[1]}">${x[0]}</a>`).join('')}</div>
+    <p class="lodging-hint">Compare les logements sur ces plateformes, puis enregistre ci-dessous celui que tu retiens. Rien n'est imposé.</p>
+    <div class="lodging-form">
+      ${F('lg-nom', 'Nom du logement', h.nom)}
+      ${F('lg-lien', 'Lien (Booking / Airbnb…)', h.lien, 'url')}
+      ${F('lg-adresse', 'Adresse', h.adresse)}
+      ${F('lg-prix', 'Prix (ex : 95€/nuit)', h.prix)}
+      <label class="lg-lbl">🛬 Arrivée<div class="lg-dt">${F('lg-ci-date', '', h.checkinDate || ci, 'date')}${F('lg-ci-time', '', h.checkinTime, 'time')}</div></label>
+      <label class="lg-lbl">🛫 Départ<div class="lg-dt">${F('lg-co-date', '', h.checkoutDate || co, 'date')}${F('lg-co-time', '', h.checkoutTime, 'time')}</div></label>
+      ${F('lg-tel', '📞 Téléphone', h.tel, 'tel')}
+      ${F('lg-email', '✉️ Email', h.email, 'email')}
+      <textarea id="lg-notes" class="add-item-input lg-field lg-notes" placeholder="Notes / commentaires (code d'accès, contact, à savoir…)">${_esc(h.notes || '')}</textarea>
+    </div>
+    <div class="el-chips" style="margin-top:8px">${opts.map(o => `<button class="status-chip ${o.key === h.status ? 'on' : ''}" style="--c:${o.color}" data-hebergement="${o.key}">${o.label}</button>`).join('')}</div>
+    <button class="btn btn-success btn-sm" id="lodging-save" style="margin-top:10px">💾 Enregistrer le logement</button>`;
+}
+
 function openTripModal(id) {
   const t = getTrip(id);
   if (!t) return;
@@ -146,7 +182,7 @@ function openTripModal(id) {
 
       <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">🧩 Avancement par élément</h3>
       ${elementRow('Transport', '✈️', 'transport', t.transport.status, 'data-transport', t.transport.label, 'transport')}
-      ${elementRow('Hébergement', '🏨', 'hebergement', t.hebergement.status, 'data-hebergement', t.hebergement.nom, 'hebergement')}
+      ${lodgingSectionHTML(t)}
 
       <div class="el-label" style="margin:14px 0 8px;display:flex;align-items:center;gap:8px">
         🎯 Activités
@@ -164,7 +200,7 @@ function openTripModal(id) {
       </div>
 
       <div class="info-box" style="margin-top:16px;font-size:.8rem">
-        💡 Clique sur un statut pour le changer · <strong>double-clique</strong> sur un intitulé (transport, hébergement, activité) pour le modifier · la progression se met à jour toute seule.
+        💡 Clique sur un statut pour le changer · <strong>double-clique</strong> sur un intitulé (transport, activité) pour le modifier · la progression se met à jour toute seule.
       </div>
 
       <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">📅 Dates du voyage</h3>
@@ -263,6 +299,20 @@ function openTripModal(id) {
     updateTrip(id, t2 => ({ hebergement: { ...t2.hebergement, status: b.dataset.hebergement } }));
     openTripModal(id);
   }));
+  // Enregistrer le logement choisi par l'utilisateur
+  const lgSave = m.querySelector('#lodging-save');
+  if (lgSave) lgSave.addEventListener('click', () => {
+    const gv = x => { const el = document.getElementById(x); return el ? el.value.trim() : ''; };
+    updateTrip(id, t2 => ({ hebergement: Object.assign({}, t2.hebergement, {
+      nom: gv('lg-nom'), lien: gv('lg-lien'), adresse: gv('lg-adresse'), prix: gv('lg-prix'),
+      checkinDate: gv('lg-ci-date'), checkoutDate: gv('lg-co-date'),
+      checkinTime: gv('lg-ci-time'), checkoutTime: gv('lg-co-time'),
+      tel: gv('lg-tel'), email: gv('lg-email'), notes: gv('lg-notes'),
+    }) }));
+    window.showToast && window.showToast('🏨 Logement enregistré');
+    window.logHistory && window.logHistory('logement enregistré', gv('lg-nom') || t.nom);
+    openTripModal(id);
+  });
   m.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
     const i = +b.dataset.act;
     updateTrip(id, t2 => {

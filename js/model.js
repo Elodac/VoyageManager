@@ -106,7 +106,8 @@ function tripFromDestination(dest, overrides = {}) {
     participants: [],
     status: CATALOG_TO_TRIP_STATUS[dest.statut] || 'idee',
     transport:   { mode: dest.compagnie || '', label: dest.vol || '', status: confirmed ? 'confirme' : 'non_reserve' },
-    hebergement: { nom: dest.logement || '', status: confirmed ? 'confirme' : 'recherche' },
+    // Logement 100% choisi par l'utilisateur (aucun hébergement imposé)
+    hebergement: { nom: '', adresse: '', lien: '', prix: '', checkinDate: '', checkoutDate: '', checkinTime: '', checkoutTime: '', tel: '', email: '', notes: '', status: 'recherche' },
     activites,
     budget: { min: dest.budget_min || 0, max: dest.budget_max || 0 },
     notes: '',

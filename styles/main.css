@@ -582,6 +582,17 @@ body:has(#page-transport.active) main{max-width:1600px}
 body.role-admin .nav-btn.admin-only{display:flex}
 body.role-admin .admin-only.admin-inline{display:inline-flex}
 
+/* ── CHOISIR SON LOGEMENT ────────────────────────────────── */
+.lodging-tools{display:flex;flex-wrap:wrap;gap:6px}
+.lodging-hint{font-size:.76rem;color:var(--muted);margin:8px 0 10px;line-height:1.4}
+.lodging-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lodging-form .lg-field{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:.83rem;outline:none;width:100%}
+.lodging-form .lg-field:focus{border-color:var(--accent)}
+.lodging-form .lg-lbl{font-size:.72rem;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.lodging-form .lg-dt{display:flex;gap:6px}
+.lodging-form .lg-notes{grid-column:1 / -1;min-height:64px;resize:vertical}
+@media(max-width:600px){.lodging-form{grid-template-columns:1fr}}
+
 /* ── HISTORIQUE ──────────────────────────────────────────── */
 .hist-item{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:6px;font-size:.85rem}
 .hist-ico{font-size:1.1rem;flex-shrink:0}
