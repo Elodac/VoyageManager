@@ -56,16 +56,24 @@ section.page.active{display:block}
 .hero-actions .btn{justify-content:center;width:100%;padding:12px 20px;position:relative;z-index:10;cursor:pointer}
 .hero-confirmed .hero-actions .btn-outline{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
 .hero-confirmed .hero-actions .btn-outline:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.55)}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;border:none;font-size:.85rem;font-weight:600;transition:all .15s;white-space:nowrap}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:#2563eb}
-.btn-success{background:var(--green);color:#000}
-.btn-success:hover{background:#16a34a}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-.btn-sm{padding:5px 10px;font-size:.78rem}
-.btn-danger{background:#ef444422;border:1px solid #ef444444;color:#ef4444}
-.btn-danger:hover{background:#ef4444;color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:10px;border:1px solid transparent;font-size:.85rem;font-weight:600;line-height:1.2;transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur-fast) var(--ease);white-space:nowrap;user-select:none}
+.btn:active{transform:translateY(1px)}
+.btn:disabled,.btn[disabled],.btn.is-loading{opacity:.5;pointer-events:none;cursor:not-allowed}
+.btn.is-loading{position:relative;color:transparent!important}
+.btn.is-loading::after{content:'';position:absolute;width:15px;height:15px;top:calc(50% - 7.5px);left:calc(50% - 7.5px);border:2px solid currentColor;border-right-color:transparent;border-radius:50%;color:#fff;animation:btn-spin .6s linear infinite}
+@keyframes btn-spin{to{transform:rotate(360deg)}}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.28)}
+.btn-primary:hover{background:var(--accent-hover);box-shadow:0 4px 14px rgba(59,130,246,.4)}
+.btn-success{background:var(--green);color:#04120a}
+.btn-success:hover{background:#16a34a;box-shadow:0 4px 14px rgba(34,197,94,.35)}
+.btn-outline{background:transparent;border-color:var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-weak)}
+.btn-sm{padding:6px 11px;font-size:.78rem;border-radius:8px}
+.btn-lg{padding:12px 22px;font-size:.92rem;border-radius:12px}
+.btn-danger{background:var(--red-weak);border-color:#ef444444;color:#ef4444}
+.btn-danger:hover{background:#ef4444;color:#fff;border-color:#ef4444}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}
 
 /* ── STATUT BADGES ─────────────────────────────────── */
 .badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:600}
@@ -199,10 +207,10 @@ section#page-carte.active{display:flex;flex-direction:column;height:calc(100vh -
 .budget-bar-inner{height:100%;border-radius:4px}
 
 /* ── INFO BOXES ────────────────────────────────────── */
-.info-box{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 14px;margin:12px 0;font-size:.84rem}
-.info-box.success{border-color:var(--green);background:#22c55e0a}
-.info-box.warning{border-color:var(--yellow);background:#f59e0b0a}
-.info-box.danger{border-color:var(--red);background:#ef44440a}
+.info-box{background:var(--accent-weak);border:1px solid #3b82f63d;border-radius:10px;padding:12px 14px;margin:12px 0;font-size:.84rem}
+.info-box.success{border-color:#22c55e3d;background:var(--green-weak)}
+.info-box.warning{border-color:#f59e0b3d;background:var(--yellow-weak)}
+.info-box.danger{border-color:#ef44443d;background:var(--red-weak)}
 .info-box strong{font-weight:600}
 
 /* ── TABLE ─────────────────────────────────────────── */
@@ -449,7 +457,7 @@ body:has(#page-transport.active) main{max-width:1600px}
 /* ── CONTINENT VIEW (destinations) ─────────────────── */
 .continent-section{margin-bottom:28px}
 .continent-header{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px;padding:10px 0 6px;border-bottom:2px solid var(--border)}
-.country-group{margin-bottom:16px;padding-left:8px;border-left:3px solid var(--border)}
+.country-group{margin-bottom:16px;padding-left:12px;border-left:1px solid var(--border)}
 .country-label{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
 
 /* ── RESPONSIVE MOBILE ─────────────────────────────── */
@@ -764,3 +772,77 @@ body.role-admin .admin-only.admin-inline{display:inline-flex}
   .pin-grip{display:none}
 }
 
+
+/* ============================================================
+   POLISH — finition transverse (surfaces navigateur, motion,
+   états, accessibilité). Cascade sur toute l'application.
+   ============================================================ */
+
+/* ── Surfaces navigateur (le signal le moins cher d'un produit soigné) ── */
+::selection{background:var(--accent);color:#fff}
+html{scrollbar-color:var(--border-strong) transparent}
+*{scrollbar-width:thin}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px;border:3px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#4a597a}
+input,textarea{caret-color:var(--accent)}
+input,textarea,select,button{accent-color:var(--accent)}
+
+/* ── Champs de formulaire : focus cohérent avec anneau ── */
+.search-input:focus,.add-item-input:focus,.add-cat-input:focus,
+.adv-field input:focus,.item-edit-input:focus,input:focus,textarea:focus,select:focus{
+  border-color:var(--accent);box-shadow:var(--ring)
+}
+input::placeholder,textarea::placeholder{color:var(--text-dim)}
+input[type=date],input[type=time],input[type=number]{color-scheme:dark}
+
+/* ── Cartes : ombre douce + transition cohérente ── */
+.card{box-shadow:var(--shadow-sm);transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.stat-card{transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.stat-card:hover{border-color:var(--border-strong);transform:translateY(-2px)}
+
+/* ── Modale : entrée animée + fond flouté ── */
+.modal-overlay{background:rgba(0,0,0,.62);backdrop-filter:blur(4px);animation:overlay-in var(--dur) var(--ease)}
+.modal{box-shadow:var(--shadow-xl);animation:modal-in var(--dur-slow) var(--ease-out)}
+@keyframes overlay-in{from{opacity:0}to{opacity:1}}
+@keyframes modal-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.modal-close{transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur-fast) var(--ease)}
+.modal-close:hover{background:var(--bg-hover);transform:rotate(90deg)}
+
+/* ── Toast : variantes sémantiques ── */
+.toast.error{border-color:var(--red)}
+.toast.info{border-color:var(--accent)}
+.toast::before{content:'✓';color:var(--green);font-weight:700}
+.toast.error::before{content:'✕';color:var(--red)}
+.toast.info::before{content:'ℹ';color:var(--accent)}
+
+/* ── Transition d'apparition des pages ── */
+section.page.active{animation:page-in var(--dur-slow) var(--ease-out)}
+section#page-carte.active{animation:none}
+@keyframes page-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── Liens de la barre latérale : micro-décalage au survol ── */
+.nav-btn{transition:background var(--dur) var(--ease),color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur-fast) var(--ease)}
+.nav-btn:not(.active):hover{transform:translateX(2px)}
+
+/* ── Cibles tactiles : minimum 40px de haut sur mobile ── */
+@media(max-width:640px){
+  .btn,.filtre-btn{min-height:40px}
+  .btn-sm{min-height:36px}
+}
+
+/* ── Respect de prefers-reduced-motion ── */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* ── Police d'affichage (titres & marque) — caractère premium ── */
+.sidebar-brand,
+section.page > h1,
+.hero-content h1,
+.modal-header h2,
+.pg-inner h1,
+.stat-val,
+.countdown-val{font-family:var(--font-display);letter-spacing:-.02em}
+.sidebar-brand{letter-spacing:-.01em}

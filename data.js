@@ -309,7 +309,7 @@ const DESTINATIONS = [
     id: "madrid",
     nom: "Madrid",
     pays: "Espagne",
-    emoji: "🇪🇸",
+    emoji: "🥘",
     statut: "projet",
     budget_min: 900, budget_max: 1400,
     dates: "Projet 2026",

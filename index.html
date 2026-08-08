@@ -7,7 +7,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
 <script>
 (function(){var v='?v='+Date.now();
 document.write('<link rel="stylesheet" href="styles/tokens.css'+v+'">');
@@ -2146,7 +2148,7 @@ function ficheList(title, items, tone) {
   return `<div style="margin-bottom:16px">
     <h3 style="font-size:.85rem;font-weight:600;margin-bottom:8px">${title}</h3>
     <div style="display:flex;flex-direction:column;gap:6px">
-      ${items.map(t => `<div style="font-size:.83rem;line-height:1.45;border-left:3px solid ${col};padding:4px 0 4px 10px">${escHtml(typeof t === 'string' ? t : (t.text || ''))}</div>`).join('')}
+      ${items.map(t => `<div style="font-size:.83rem;line-height:1.45;padding:3px 0 3px 18px;position:relative"><span style="position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:50%;background:${col}"></span>${escHtml(typeof t === 'string' ? t : (t.text || ''))}</div>`).join('')}
     </div>
   </div>`;
 }

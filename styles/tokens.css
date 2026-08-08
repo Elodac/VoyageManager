@@ -54,6 +54,7 @@
   --sp-10: 40px;
 
   /* ── Typographie ── */
+  --font-display: 'Sora', 'Inter', system-ui, sans-serif;
   --fs-xs: .74rem;
   --fs-sm: .82rem;
   --fs-base: .9rem;
