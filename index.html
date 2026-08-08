@@ -140,22 +140,22 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 
   <!-- Stats globales -->
   <div class="stats-row">
-    <div class="stat-card">
+    <button type="button" class="stat-card" onclick="goToStatut('confirme')" title="Voir les destinations confirmées">
       <div class="stat-val" style="color:var(--green)" id="stat-confirme">1</div>
-      <div class="stat-label">Confirmé(s)</div>
-    </div>
-    <div class="stat-card">
+      <div class="stat-label">Confirmé(s) <span class="stat-arrow">→</span></div>
+    </button>
+    <button type="button" class="stat-card" onclick="goToStatut('planification')" title="Voir les destinations en planification">
       <div class="stat-val" style="color:var(--yellow)" id="stat-planification">6</div>
-      <div class="stat-label">En planification</div>
-    </div>
-    <div class="stat-card">
+      <div class="stat-label">En planification <span class="stat-arrow">→</span></div>
+    </button>
+    <button type="button" class="stat-card" onclick="goToStatut('projet')" title="Voir les projets Europe">
       <div class="stat-val" style="color:var(--accent2)" id="stat-projet">10</div>
-      <div class="stat-label">Projets Europe</div>
-    </div>
-    <div class="stat-card">
+      <div class="stat-label">Projets Europe <span class="stat-arrow">→</span></div>
+    </button>
+    <button type="button" class="stat-card" onclick="goToStatut('projet_longterme')" title="Voir les longs courriers">
       <div class="stat-val" style="color:var(--purple)" id="stat-projet_longterme">4</div>
-      <div class="stat-label">Longs courriers</div>
-    </div>
+      <div class="stat-label">Longs courriers <span class="stat-arrow">→</span></div>
+    </button>
   </div>
 
   <!-- Mes voyages — suivi d'avancement -->
@@ -644,29 +644,14 @@ function pgRenderProfiles() {
     <button class="pg-profile" onclick="pgSelect('${p.id}')" aria-label="Profil ${escHtml(p.nom)}">
       <div class="pg-avatar" style="background:${p.color}22;border-color:${p.color}55">${p.avatar}</div>
       <div class="pg-name">${escHtml(p.nom)}</div>
-      ${p.password ? '<div class="pg-lock">🔒 protégé</div>' : ''}
     </button>`).join('');
 }
 
+// La vraie protection d'accès se fait en amont via Cloudflare Access (cf. CLOUDFLARE_ACCESS.md).
+// Ici le portail est un simple sélecteur d'espace : on entre directement.
 function pgSelect(id) {
   const p = vmProfile(id); if (!p) return;
-  if (p.password) {
-    _pgPending = id;
-    const hasHash = !!window.__rawLS.get('vm_pwhash_' + id);
-    document.getElementById('pg-profiles').classList.add('hidden');
-    document.getElementById('pg-password').classList.remove('hidden');
-    const av = document.getElementById('pg-pw-avatar');
-    av.textContent = p.avatar; av.style.background = p.color + '22'; av.style.borderColor = p.color;
-    document.getElementById('pg-pw-name').textContent = p.nom;
-    document.getElementById('pg-pw-sub').textContent = hasHash ? 'Entre ton mot de passe' : 'Crée ton mot de passe (1re connexion)';
-    document.getElementById('pg-pw-btn').textContent = hasHash ? 'Entrer' : 'Créer';
-    document.getElementById('pg-title').textContent = p.nom;
-    const inp = document.getElementById('pg-pw-input'); inp.value = '';
-    document.getElementById('pg-pw-err').textContent = '';
-    setTimeout(() => inp.focus(), 60);
-  } else {
-    vmAuthenticate(id);
-  }
+  vmAuthenticate(id);
 }
 
 async function pgSubmitPassword() {
@@ -720,7 +705,7 @@ function applyRole() {
   const p = vmCurrentProfile();
   document.body.classList.toggle('role-admin', p.role === 'admin');
   document.body.classList.toggle('role-user', p.role !== 'admin');
-  const pwBtn = document.getElementById('sp-pwd-btn'); if (pwBtn) pwBtn.hidden = !p.password;
+  const pwBtn = document.getElementById('sp-pwd-btn'); if (pwBtn) pwBtn.hidden = true;
 }
 function updateProfileIndicator() {
   const p = vmCurrentProfile();
@@ -2172,6 +2157,14 @@ function setFiltre(f) {
   renderDestGrid();
 }
 
+// Depuis les tuiles du tableau de bord → page Destinations filtrée par statut
+function goToStatut(statut) {
+  showPage('destinations');
+  setFiltre(statut || 'all');
+  const main = document.querySelector('main'); if (main) main.scrollTop = 0;
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
 const _filterDestsBounced = debounce(function() {
   currentSearchQuery = document.querySelector('.search-input')?.value || '';
   sessionStorage.setItem('vm_search', currentSearchQuery);
@@ -2484,16 +2477,16 @@ let clusterGroup = null;
 function initMap() {
   map = L.map('map', { zoomControl: true, worldCopyJump: true, minZoom: 2 }).setView([46, 4], 4);
   map.setMaxBounds([[-85, -200], [85, 200]]);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap · © CartoDB',
-    maxZoom: 18
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · © CARTO',
+    maxZoom: 20
   }).addTo(map);
   mapSetFilter('all');
   // Force resize après affichage
   setTimeout(() => map.invalidateSize(), 150);
 }
 
-const COLOR_MAP = { confirme:'#22c55e', planification:'#f59e0b', projet:'#6366f1', projet_longterme:'#8b5cf6' };
+const COLOR_MAP = { confirme:'#2ecc71', planification:'#f5a623', projet:'#4f6ef5', projet_longterme:'#a78bfa' };
 
 function makeIcon(color, emoji, size=32) {
   return L.divIcon({

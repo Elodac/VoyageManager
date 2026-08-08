@@ -3,31 +3,33 @@
    Couleurs · typographie · espacements · rayons · ombres · motion
    ============================================================ */
 :root {
-  /* ── Couleurs de surface ── */
-  --bg: #0f1117;
-  --bg2: #161b27;
-  --bg3: #1e2535;
-  --bg-hover: #232c40;
-  --border: #2a3347;
-  --border-strong: #3a465e;
+  /* ── Couleurs de surface (nuit indigo profonde, légèrement chaude) ── */
+  --bg: #0b0f1a;
+  --bg2: #131a2b;
+  --bg3: #1d2740;
+  --bg-hover: #27324f;
+  --border: #2c3852;
+  --border-strong: #41527a;
 
   /* ── Texte ── */
-  --text: #e2e8f0;
-  --muted: #a3aec2;
-  --text-dim: #7c889e;
+  --text: #eaf0fb;
+  --muted: #9fabc6;
+  --text-dim: #6d7b99;
 
   /* ── Couleurs de marque / sémantiques ── */
-  --accent: #3b82f6;
-  --accent-hover: #5a97ff;
-  --accent-weak: rgba(59,130,246,.14);
-  --accent2: #6366f1;
-  --green: #22c55e;
-  --green-weak: rgba(34,197,94,.14);
-  --yellow: #f59e0b;
-  --yellow-weak: rgba(245,158,11,.14);
-  --red: #ef4444;
-  --red-weak: rgba(239,68,68,.14);
-  --purple: #8b5cf6;
+  --accent: #4f6ef5;
+  --accent-hover: #6d8bff;
+  --accent-weak: rgba(79,110,245,.16);
+  --accent2: #22d3ee;
+  --grad-primary: linear-gradient(135deg, #5b7cfa 0%, #7c6ef0 100%);
+  --grad-brand: linear-gradient(135deg, #6d8bff 0%, #22d3ee 100%);
+  --green: #2ecc71;
+  --green-weak: rgba(46,204,113,.15);
+  --yellow: #f5a623;
+  --yellow-weak: rgba(245,166,35,.15);
+  --red: #f2555a;
+  --red-weak: rgba(242,85,90,.15);
+  --purple: #a78bfa;
 
   /* ── Rayons ── */
   --radius-sm: 8px;

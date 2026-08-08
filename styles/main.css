@@ -62,10 +62,10 @@ section.page.active{display:block}
 .btn.is-loading{position:relative;color:transparent!important}
 .btn.is-loading::after{content:'';position:absolute;width:15px;height:15px;top:calc(50% - 7.5px);left:calc(50% - 7.5px);border:2px solid currentColor;border-right-color:transparent;border-radius:50%;color:#fff;animation:btn-spin .6s linear infinite}
 @keyframes btn-spin{to{transform:rotate(360deg)}}
-.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.28)}
-.btn-primary:hover{background:var(--accent-hover);box-shadow:0 4px 14px rgba(59,130,246,.4)}
-.btn-success{background:var(--green);color:#04120a}
-.btn-success:hover{background:#16a34a;box-shadow:0 4px 14px rgba(34,197,94,.35)}
+.btn-primary{background:var(--grad-primary);color:#fff;box-shadow:0 2px 10px rgba(79,110,245,.32)}
+.btn-primary:hover{filter:brightness(1.08);box-shadow:0 5px 18px rgba(79,110,245,.46)}
+.btn-success{background:var(--green);color:#04160c}
+.btn-success:hover{filter:brightness(1.06);box-shadow:0 4px 14px rgba(46,204,113,.35)}
 .btn-outline{background:transparent;border-color:var(--border);color:var(--text)}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-weak)}
 .btn-sm{padding:6px 11px;font-size:.78rem;border-radius:8px}
@@ -77,10 +77,10 @@ section.page.active{display:block}
 
 /* ── STATUT BADGES ─────────────────────────────────── */
 .badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:600}
-.badge-confirme{background:#22c55e22;color:#22c55e;border:1px solid #22c55e44}
-.badge-planification{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44}
-.badge-projet{background:#6366f122;color:#818cf8;border:1px solid #6366f144}
-.badge-projet-longterme{background:#8b5cf622;color:#a78bfa;border:1px solid #8b5cf644}
+.badge-confirme{background:var(--green-weak);color:var(--green);border:1px solid #2ecc7155}
+.badge-planification{background:var(--yellow-weak);color:var(--yellow);border:1px solid #f5a62355}
+.badge-projet{background:var(--accent-weak);color:#8ba0ff;border:1px solid #4f6ef555}
+.badge-projet-longterme{background:rgba(167,139,250,.15);color:var(--purple);border:1px solid #a78bfa55}
 
 /* ── DESTINATION CARDS ─────────────────────────────── */
 .dest-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-radius);padding:18px;cursor:pointer;transition:all .2s;position:relative}
@@ -236,9 +236,11 @@ section#page-carte.active{display:flex;flex-direction:column;height:calc(100vh -
 /* ── STATS MINI ────────────────────────────────────── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 @media(max-width:700px){.stats-row{grid-template-columns:repeat(2,1fr)}}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
-.stat-val{font-size:1.6rem;font-weight:700;margin-bottom:2px}
-.stat-label{font-size:.75rem;color:var(--muted)}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-radius);padding:16px;display:block;width:100%;text-align:left;font-family:inherit;cursor:pointer}
+.stat-val{font-size:1.7rem;font-weight:700;margin-bottom:2px;font-family:var(--font-display);letter-spacing:-.02em}
+.stat-label{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.stat-arrow{opacity:0;transform:translateX(-4px);transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);color:var(--accent);font-weight:700}
+.stat-card:hover .stat-arrow{opacity:1;transform:translateX(0)}
 
 /* ── POI CARDS ─────────────────────────────────────── */
 .poi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -566,7 +568,7 @@ body:has(#page-transport.active) main{max-width:1600px}
 .budget-ok{color:var(--green)!important}
 
 /* ── ACCUEIL PROFILS (Netflix) ───────────────────────────── */
-.profile-gate{position:fixed;inset:0;z-index:1000;background:radial-gradient(1200px 600px at 50% -10%, #182136 0%, var(--bg) 60%);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.profile-gate{position:fixed;inset:0;z-index:5000;background:radial-gradient(1200px 600px at 50% -10%, #1a2740 0%, var(--bg) 60%);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
 .profile-gate[hidden]{display:none}
 .pg-inner{width:100%;max-width:900px;text-align:center}
 .pg-logo{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;margin-bottom:34px}
@@ -808,8 +810,9 @@ input[type=date],input[type=time],input[type=number]{color-scheme:dark}
 
 /* ── Cartes : ombre douce + transition cohérente ── */
 .card{box-shadow:var(--shadow-sm);transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease)}
-.stat-card{transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease)}
-.stat-card:hover{border-color:var(--border-strong);transform:translateY(-2px)}
+.stat-card{transition:border-color var(--dur) var(--ease),transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
+.stat-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+.stat-card:active{transform:translateY(0)}
 
 /* ── Modale : entrée animée + fond flouté ── */
 .modal-overlay{background:rgba(0,0,0,.62);backdrop-filter:blur(4px);animation:overlay-in var(--dur) var(--ease)}
