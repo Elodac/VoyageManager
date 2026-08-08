@@ -3,33 +3,34 @@
    Couleurs · typographie · espacements · rayons · ombres · motion
    ============================================================ */
 :root {
-  /* ── Couleurs de surface (nuit indigo profonde, légèrement chaude) ── */
-  --bg: #0b0f1a;
-  --bg2: #131a2b;
-  --bg3: #1d2740;
-  --bg-hover: #27324f;
-  --border: #2c3852;
-  --border-strong: #41527a;
+  color-scheme: light;
+  /* ── Couleurs de surface (thème clair, bleu ciel / blanc, lumineux) ── */
+  --bg: #eef4fc;
+  --bg2: #ffffff;
+  --bg3: #f2f6fc;
+  --bg-hover: #e6eefa;
+  --border: #d8e2f0;
+  --border-strong: #b7c6dd;
 
   /* ── Texte ── */
-  --text: #eaf0fb;
-  --muted: #9fabc6;
-  --text-dim: #6d7b99;
+  --text: #172033;
+  --muted: #55647d;
+  --text-dim: #8593a8;
 
   /* ── Couleurs de marque / sémantiques ── */
-  --accent: #4f6ef5;
-  --accent-hover: #6d8bff;
-  --accent-weak: rgba(79,110,245,.16);
-  --accent2: #22d3ee;
-  --grad-primary: linear-gradient(135deg, #5b7cfa 0%, #7c6ef0 100%);
-  --grad-brand: linear-gradient(135deg, #6d8bff 0%, #22d3ee 100%);
-  --green: #2ecc71;
-  --green-weak: rgba(46,204,113,.15);
-  --yellow: #f5a623;
-  --yellow-weak: rgba(245,166,35,.15);
-  --red: #f2555a;
-  --red-weak: rgba(242,85,90,.15);
-  --purple: #a78bfa;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-weak: rgba(37,99,235,.10);
+  --accent2: #0891b2;
+  --grad-primary: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --grad-brand: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
+  --green: #16a34a;
+  --green-weak: rgba(22,163,74,.12);
+  --yellow: #d97706;
+  --yellow-weak: rgba(217,119,6,.12);
+  --red: #dc2626;
+  --red-weak: rgba(220,38,38,.10);
+  --purple: #7c3aed;
 
   /* ── Rayons ── */
   --radius-sm: 8px;
@@ -39,10 +40,10 @@
   --radius-full: 999px;
 
   /* ── Ombres ── */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.28);
-  --shadow: 0 4px 16px rgba(0,0,0,.32);
-  --shadow-lg: 0 12px 32px rgba(0,0,0,.42);
-  --shadow-xl: 0 24px 60px rgba(0,0,0,.55);
+  --shadow-sm: 0 1px 2px rgba(23,32,54,.06);
+  --shadow: 0 4px 16px rgba(23,32,54,.10);
+  --shadow-lg: 0 12px 30px rgba(23,32,54,.14);
+  --shadow-xl: 0 24px 60px rgba(23,32,54,.20);
   --ring: 0 0 0 3px var(--accent-weak);
 
   /* ── Espacements (échelle 4px) ── */
