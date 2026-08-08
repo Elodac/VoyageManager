@@ -810,12 +810,9 @@ input[type=date],input[type=time],input[type=number]{color-scheme:dark}
 .modal-close{transition:background var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur-fast) var(--ease)}
 .modal-close:hover{background:var(--bg-hover);transform:rotate(90deg)}
 
-/* ── Toast : variantes sémantiques ── */
+/* ── Toast : variantes (les messages portent déjà leur propre emoji) ── */
 .toast.error{border-color:var(--red)}
 .toast.info{border-color:var(--accent)}
-.toast::before{content:'✓';color:var(--green);font-weight:700}
-.toast.error::before{content:'✕';color:var(--red)}
-.toast.info::before{content:'ℹ';color:var(--accent)}
 
 /* ── Transition d'apparition des pages ── */
 section.page.active{animation:page-in var(--dur-slow) var(--ease-out)}
