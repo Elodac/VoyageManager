@@ -734,8 +734,17 @@ body.role-admin .admin-only.admin-inline{display:inline-flex}
 .rt-badge{background:var(--accent2);color:#fff;border-radius:5px;padding:1px 6px;font-size:.62rem;font-weight:700;text-transform:uppercase}
 .rt-badge-geo{background:var(--bg2);color:var(--muted);border:1px solid var(--border)}
 .rt-stop-controls{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
-.rt-nights-lbl{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:4px}
-.rt-nights{width:52px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px 6px;color:var(--text);font-size:.8rem;text-align:center}
+/* Stepper « nuits » — remplace les flèches natives moches du champ number */
+.rt-nights-stepper{display:inline-flex;align-items:center;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:2px 8px 2px 8px}
+.rt-nights-moon{font-size:.8rem;margin-right:2px}
+.rt-step-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:6px;color:var(--muted);font-size:1rem;font-weight:600;line-height:1;cursor:pointer;padding:0;transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
+.rt-step-btn:hover:not(:disabled){background:var(--accent-weak);color:var(--accent)}
+.rt-step-btn:active:not(:disabled){background:var(--accent);color:#fff}
+.rt-step-btn:disabled{opacity:.3;cursor:default}
+.rt-nights{width:30px;background:transparent;border:none;color:var(--text);font-size:.82rem;font-weight:600;text-align:center;padding:0;outline:none;font-variant-numeric:tabular-nums}
+.rt-nights::-webkit-outer-spin-button,.rt-nights::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.rt-nights{-moz-appearance:textfield;appearance:textfield}
+.rt-nights-unit{font-size:.74rem;color:var(--muted);margin-left:2px}
 .rt-note{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--text);font-size:.78rem;outline:none}
 .rt-note:focus{border-color:var(--accent)}
 .rt-stop-actions{display:flex;gap:3px;flex-shrink:0}
@@ -843,3 +852,17 @@ section.page > h1,
 .stat-val,
 .countdown-val{font-family:var(--font-display);letter-spacing:-.02em}
 .sidebar-brand{letter-spacing:-.01em}
+
+/* ── Empilement des overlays : fiche au-dessus des éditeurs, édition au-dessus de la fiche ── */
+#modal-overlay{z-index:3200}
+#edit-dest-overlay{z-index:3400}
+
+/* ── Road trip : sélection par pays ── */
+.rt-country-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rt-country-row #rt-country-select{flex:1;min-width:170px}
+.rt-country-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.rt-country-chip{display:inline-flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--border);border-radius:99px;padding:5px 10px 5px 12px;color:var(--text);font-size:.8rem;cursor:pointer;transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+.rt-country-chip:hover{border-color:var(--accent);background:var(--accent-weak)}
+.rt-country-chip .rt-chip-ico{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);font-size:.72rem;font-weight:700;line-height:1}
+.rt-country-chip.added{background:var(--green-weak);border-color:#22c55e55;color:#dcfce7}
+.rt-country-chip.added .rt-chip-ico{background:var(--green);border-color:var(--green);color:#04120a}
