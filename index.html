@@ -24,7 +24,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 (function(){
   // Données GLOBALES : liste des profils (extensible). role = admin | user.
   window.VM_PROFILES = [
-    { id:'clement', nom:'Clément', avatar:'🧭', role:'admin', color:'#3b82f6', password:true },
+    { id:'clement', nom:'Clément', avatar:'🧭', role:'admin', color:'#3b82f6' },
     { id:'heloise', nom:'Héloïse', avatar:'🌸', role:'user',  color:'#ec4899' },
     { id:'maxence', nom:'Maxence', avatar:'🎮', role:'user',  color:'#22c55e' },
     { id:'lucie',   nom:'Lucie',   avatar:'🦋', role:'user',  color:'#a855f7' },
@@ -33,7 +33,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
   ];
   // Clés NON namespacées (partagées / techniques)
   var GLOBAL_KEYS = { 'vm_active_profile':1, 'vm_auth':1, 'vm_history':1, 'vm_global_dests':1,
-                      'vm_migrated_v1':1, 'vm_pwhash_clement':1 };
+                      'vm_migrated_v1':1, 'vm_pwhash_clement':1, 'vm_theme':1 };
   var USER_PREFIXES = ['vm_', 'voyagemanager_', 'todos_'];
   function isUserKey(k){
     if(!k || GLOBAL_KEYS[k]) return false;
@@ -51,6 +51,8 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     remove:function(k){ return r.call(raw,k); },
     keys:function(){ var a=[]; for(var i=0;i<raw.length;i++) a.push(raw.key(i)); return a; }
   };
+  // Thème appliqué le plus tôt possible (évite le flash) — défaut : clair
+  try { if (window.__rawLS.get('vm_theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); } catch(e){}
   // Profil actif (défaut : clement, propriétaire des données existantes)
   window.__profile = window.__rawLS.get('vm_active_profile') || 'clement';
   function nk(k){ return (window.__profile && isUserKey(k)) ? ('u:'+window.__profile+':'+k) : k; }
@@ -77,17 +79,6 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     <div class="pg-logo">✈️ <span>Voyage</span>Manager</div>
     <h1 class="pg-title" id="pg-title">Qui voyage ?</h1>
     <div class="pg-profiles" id="pg-profiles"></div>
-    <div class="pg-password hidden" id="pg-password">
-      <div class="pg-pw-avatar" id="pg-pw-avatar"></div>
-      <div class="pg-pw-name" id="pg-pw-name"></div>
-      <div class="pg-pw-sub" id="pg-pw-sub"></div>
-      <input type="password" id="pg-pw-input" class="pg-pw-input" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')pgSubmitPassword()">
-      <div class="pg-pw-err" id="pg-pw-err"></div>
-      <div class="pg-pw-actions">
-        <button class="btn btn-primary" id="pg-pw-btn" onclick="pgSubmitPassword()">Entrer</button>
-        <button class="btn btn-outline" onclick="pgBack()">← Changer de profil</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -120,7 +111,7 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
         <div class="sp-role" id="sp-role"></div>
       </div>
       <div class="sp-actions">
-        <button class="sp-btn" id="sp-pwd-btn" onclick="pgChangePassword()" title="Changer le mot de passe" aria-label="Changer le mot de passe" hidden>🔑</button>
+        <button class="sp-btn" id="theme-toggle" onclick="toggleTheme()" title="Basculer clair / sombre" aria-label="Basculer le thème clair ou sombre">🌙</button>
         <button class="sp-btn" onclick="vmLogout()" title="Changer de profil / déconnexion" aria-label="Déconnexion">🚪</button>
       </div>
     </div>
@@ -463,15 +454,17 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
     <select class="valise-select" id="valise-dest-select" onchange="loadValise()">
       <option value="">— Choisir une destination —</option>
     </select>
-    <div style="display:flex;align-items:center;gap:8px;flex:1">
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" id="valise-progress" style="width:0%"></div>
+    <div id="valise-actions" style="display:none;align-items:center;gap:8px;flex:1;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="valise-progress" style="width:0%"></div>
+        </div>
+        <span id="valise-progress-label" style="font-size:.82rem;color:var(--muted);white-space:nowrap">0 / 0</span>
       </div>
-      <span id="valise-progress-label" style="font-size:.82rem;color:var(--muted);white-space:nowrap">0 / 0</span>
+      <button class="btn btn-outline btn-sm" onclick="uncheckAll()">↩ Tout décocher</button>
+      <button class="btn btn-outline btn-sm" onclick="exportValise()">📋 Copier liste</button>
+      <button class="btn btn-primary btn-sm" onclick="printValise()">🖨️ Imprimer la checklist</button>
     </div>
-    <button class="btn btn-outline btn-sm" onclick="uncheckAll()">↩ Tout décocher</button>
-    <button class="btn btn-outline btn-sm" onclick="exportValise()">📋 Copier liste</button>
-    <button class="btn btn-primary btn-sm" onclick="printValise()">🖨️ Imprimer la checklist</button>
   </div>
   <div class="info-box" id="valise-info" style="display:none"></div>
   <div id="valise-body"></div>
@@ -625,19 +618,12 @@ let valiseState = {}; // { dest_id: { cat: { item: checked } } }
 // ════════════════════════════════════════════════════════
 //  PROFILS · AUTHENTIFICATION · RÔLES · HISTORIQUE
 // ════════════════════════════════════════════════════════
-let _pgPending = null;
 function vmProfile(id) { return (window.VM_PROFILES || []).find(p => p.id === id); }
 function vmCurrentProfile() { return vmProfile(window.__profile) || (window.VM_PROFILES || [])[0]; }
 function isAdmin() { return (vmCurrentProfile() || {}).role === 'admin'; }
 
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 function pgRenderProfiles() {
   const box = document.getElementById('pg-profiles'); if (!box) return;
-  document.getElementById('pg-password').classList.add('hidden');
   box.classList.remove('hidden');
   document.getElementById('pg-title').textContent = 'Qui voyage ?';
   box.innerHTML = (window.VM_PROFILES || []).map(p => `
@@ -654,23 +640,6 @@ function pgSelect(id) {
   vmAuthenticate(id);
 }
 
-async function pgSubmitPassword() {
-  const id = _pgPending; if (!id) return;
-  const inp = document.getElementById('pg-pw-input'), err = document.getElementById('pg-pw-err');
-  const val = inp.value;
-  if (!val || val.length < 3) { err.textContent = 'Mot de passe trop court (min. 3 caractères).'; return; }
-  const key = 'vm_pwhash_' + id, existing = window.__rawLS.get(key), hash = await sha256(val);
-  if (existing) {
-    if (hash === existing) vmAuthenticate(id);
-    else { err.textContent = 'Mot de passe incorrect.'; inp.select(); }
-  } else {
-    window.__rawLS.set(key, hash);
-    logHistory('mot de passe créé', vmProfile(id).nom);
-    vmAuthenticate(id);
-  }
-}
-function pgBack() { _pgPending = null; pgRenderProfiles(); }
-
 function vmAuthenticate(id) {
   sessionStorage.setItem('vm_auth', id);
   logHistory('connexion', vmProfile(id).nom);
@@ -686,26 +655,25 @@ function vmAuthenticate(id) {
 }
 function vmLogout() { sessionStorage.removeItem('vm_auth'); location.reload(); }
 
-async function pgChangePassword() {
-  const p = vmCurrentProfile(); if (!p.password) return;
-  const stored = window.__rawLS.get('vm_pwhash_' + p.id);
-  if (stored) {
-    const cur = prompt('Mot de passe actuel :'); if (cur === null) return;
-    if (await sha256(cur) !== stored) { showToast('❌ Mot de passe actuel incorrect'); return; }
-  }
-  const nw = prompt('Nouveau mot de passe (min. 3 caractères) :');
-  if (nw === null) return;
-  if (nw.length < 3) { showToast('Trop court'); return; }
-  window.__rawLS.set('vm_pwhash_' + p.id, await sha256(nw));
-  logHistory('mot de passe modifié', p.nom);
-  showToast('🔑 Mot de passe mis à jour');
+// ── Thème clair / sombre ──
+function vmCurrentTheme() { return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+function applyTheme(theme) {
+  if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  else document.documentElement.removeAttribute('data-theme');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) { btn.textContent = theme === 'dark' ? '☀️' : '🌙'; btn.title = theme === 'dark' ? 'Passer en clair' : 'Passer en sombre'; }
+  if (typeof vmApplyMapTiles === 'function') vmApplyMapTiles();
+}
+function toggleTheme() {
+  const next = vmCurrentTheme() === 'dark' ? 'light' : 'dark';
+  try { window.__rawLS.set('vm_theme', next); } catch(e) {}
+  applyTheme(next);
 }
 
 function applyRole() {
   const p = vmCurrentProfile();
   document.body.classList.toggle('role-admin', p.role === 'admin');
   document.body.classList.toggle('role-user', p.role !== 'admin');
-  const pwBtn = document.getElementById('sp-pwd-btn'); if (pwBtn) pwBtn.hidden = true;
 }
 function updateProfileIndicator() {
   const p = vmCurrentProfile();
@@ -715,6 +683,7 @@ function updateProfileIndicator() {
 }
 
 function vmAuthBoot() {
+  applyTheme(vmCurrentTheme()); // synchronise l'icône du bouton avec le thème chargé
   pgRenderProfiles();
   applyRole(); updateProfileIndicator();
   const gate = document.getElementById('profile-gate');
@@ -955,6 +924,7 @@ function showPage(id) {
   if(id === 'archives') buildArchives();
   if(id === 'roadtrips') buildRoadtrips();
   if(id === 'historique') buildHistorique();
+  if(id === 'valises') loadValise();
 }
 
 // ── COUNTDOWN ──────────────────────────────────────────
@@ -2473,11 +2443,23 @@ function showTab(name) {
 
 // ── MAP ────────────────────────────────────────────────
 let clusterGroup = null;
+let _mapTileLayer = null;
+
+// Fond de carte selon le thème : Voyager (clair, coloré) / dark_all (sombre)
+function vmTileUrl() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return dark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+}
+function vmApplyMapTiles() {
+  if (map && _mapTileLayer) _mapTileLayer.setUrl(vmTileUrl());
+}
 
 function initMap() {
   map = L.map('map', { zoomControl: true, worldCopyJump: true, minZoom: 2 }).setView([46, 4], 4);
   map.setMaxBounds([[-85, -200], [85, 200]]);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  _mapTileLayer = L.tileLayer(vmTileUrl(), {
     attribution: '© OpenStreetMap · © CARTO',
     maxZoom: 20
   }).addTo(map);
@@ -2662,9 +2644,16 @@ function buildValiseSelect() {
 
 function loadValise() {
   const id = document.getElementById('valise-dest-select').value;
-  if(!id) { document.getElementById('valise-body').innerHTML = ''; return; }
+  const actions = document.getElementById('valise-actions');
+  if(!id) {
+    if(actions) actions.style.display = 'none';
+    document.getElementById('valise-info').style.display = 'none';
+    document.getElementById('valise-body').innerHTML = '<div class="pin-empty">🧳 Choisis une destination pour afficher sa checklist de valise personnalisée.</div>';
+    return;
+  }
   const d = DESTINATIONS.find(x => x.id === id);
   if(!d) return;
+  if(actions) actions.style.display = 'flex';
   const tmpl = VALISE_TEMPLATES[d.valise_type] || VALISE_TEMPLATES['plage'] || Object.values(VALISE_TEMPLATES)[0];
   if(!tmpl) { document.getElementById('valise-body').innerHTML = '<p style="color:var(--muted)">Aucun template disponible.</p>'; return; }
 

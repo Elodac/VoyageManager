@@ -44,14 +44,14 @@ section.page.active{display:block}
 .card h3{font-size:.9rem;font-weight:600;margin-bottom:8px}
 
 /* ── HERO CONFIRMÉ ─────────────────────────────────── */
-.hero-confirmed{background:linear-gradient(135deg,#e5f7ec 0%,#e0edfe 100%);border:1px solid #16a34a33;border-radius:var(--card-radius);padding:28px;margin-bottom:24px;display:flex;gap:24px;align-items:flex-start;position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
+.hero-confirmed{background:var(--hero-conf-grad);border:1px solid var(--hero-conf-border);border-radius:var(--card-radius);padding:28px;margin-bottom:24px;display:flex;gap:24px;align-items:flex-start;position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
 .hero-confirmed::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,#16a34a1f 0%,transparent 70%);pointer-events:none}
 .hero-emoji{font-size:4rem;line-height:1}
 .hero-content{flex:1}
 .hero-content h1{font-size:1.6rem;font-weight:700;margin-bottom:4px;color:var(--text)}
-.hero-content .hero-sub{color:#15803d;font-size:.9rem;margin-bottom:12px;font-weight:600}
+.hero-content .hero-sub{color:var(--hero-sub);font-size:.9rem;margin-bottom:12px;font-weight:600}
 .hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.hero-pill{background:rgba(255,255,255,.7);border:1px solid rgba(22,163,74,.25);border-radius:99px;padding:4px 12px;font-size:.78rem;color:#15532c}
+.hero-pill{background:var(--hero-pill-bg);border:1px solid var(--hero-pill-border);border-radius:99px;padding:4px 12px;font-size:.78rem;color:var(--hero-pill-text)}
 .hero-actions{display:flex;flex-direction:column;gap:8px;min-width:200px;position:relative;z-index:10}
 .hero-actions .btn{justify-content:center;width:100%;padding:12px 20px;position:relative;z-index:10;cursor:pointer}
 .hero-confirmed .hero-actions .btn-outline{background:var(--bg2);border-color:var(--border);color:var(--text)}
@@ -136,7 +136,7 @@ section#page-carte.active{display:flex;flex-direction:column;height:calc(100vh -
 .map-count{margin-left:auto;font-size:.78rem;color:var(--muted);font-weight:600}
 #map-container{border-radius:var(--card-radius);overflow:hidden;border:1px solid var(--border);flex:1;min-height:0;box-shadow:var(--shadow)}
 #map{height:100%;width:100%;min-height:420px}
-.leaflet-container{background:#dbe7f3;font-family:inherit}
+.leaflet-container{background:var(--map-bg);font-family:inherit}
 /* Marqueurs personnalisés */
 .vm-marker-wrap{background:none!important;border:none!important}
 .vm-marker{border:2px solid rgba(255,255,255,.92);border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;cursor:pointer;background:var(--mc);box-shadow:0 2px 6px #0009,0 0 0 4px color-mix(in srgb,var(--mc) 28%,transparent);transition:transform .15s ease,box-shadow .15s ease}
@@ -568,29 +568,20 @@ body:has(#page-transport.active) main{max-width:1600px}
 .budget-ok{color:var(--green)!important}
 
 /* ── ACCUEIL PROFILS (Netflix) ───────────────────────────── */
-.profile-gate{position:fixed;inset:0;z-index:5000;background:radial-gradient(1200px 600px at 50% -10%, #d7e6fe 0%, var(--bg) 62%);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.profile-gate{position:fixed;inset:0;z-index:5000;background:radial-gradient(1200px 600px at 50% -10%, var(--gate-grad) 0%, var(--bg) 62%);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
 .profile-gate[hidden]{display:none}
 .pg-inner{width:100%;max-width:900px;text-align:center}
 .pg-logo{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;margin-bottom:34px}
 .pg-logo span{color:var(--accent)}
 .pg-title{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:700;margin-bottom:40px;color:var(--text)}
 .pg-profiles{display:flex;flex-wrap:wrap;gap:clamp(16px,3vw,34px);justify-content:center}
-#pg-profiles.hidden,#pg-password.hidden{display:none}
+#pg-profiles.hidden{display:none}
 .pg-profile{background:transparent;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;width:clamp(104px,15vw,150px);transition:transform .2s ease}
 .pg-profile:hover,.pg-profile:focus-visible{transform:translateY(-6px) scale(1.05)}
-.pg-avatar{width:clamp(96px,13vw,132px);height:clamp(96px,13vw,132px);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(2.6rem,6vw,3.6rem);border:3px solid transparent;box-shadow:0 10px 30px #0006;transition:border-color .2s,box-shadow .2s;background:var(--bg2)}
+.pg-avatar{width:clamp(96px,13vw,132px);height:clamp(96px,13vw,132px);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(2.6rem,6vw,3.6rem);border:3px solid transparent;box-shadow:var(--shadow-lg);transition:border-color .2s,box-shadow .2s;background:var(--bg2)}
 .pg-profile:hover .pg-avatar,.pg-profile:focus-visible .pg-avatar{border-color:var(--accent);box-shadow:var(--shadow-lg)}
 .pg-name{font-size:1rem;font-weight:600;color:var(--muted);transition:color .2s}
 .pg-profile:hover .pg-name{color:var(--accent)}
-.pg-lock{font-size:.7rem;color:var(--muted)}
-.pg-password{max-width:360px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:12px}
-.pg-pw-avatar{width:96px;height:96px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;background:var(--bg2);border:3px solid var(--accent)}
-.pg-pw-name{font-size:1.3rem;font-weight:700;color:#fff}
-.pg-pw-sub{font-size:.85rem;color:var(--muted)}
-.pg-pw-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:1rem;outline:none;text-align:center}
-.pg-pw-input:focus{border-color:var(--accent)}
-.pg-pw-err{font-size:.82rem;color:var(--red);min-height:1em}
-.pg-pw-actions{display:flex;gap:10px;margin-top:4px}
 
 /* ── PROFIL DANS LA SIDEBAR ───────────────────────────────── */
 .sidebar-profile{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px;border-radius:10px;background:var(--bg3)}
@@ -626,12 +617,12 @@ body.role-admin .admin-only.admin-inline{display:inline-flex}
 .hist-when{font-size:.72rem;color:var(--muted);flex-shrink:0}
 
 /* ── ÉPINGLÉS (page d'accueil) — drag & drop ─────────────── */
-.hero-plan{background:linear-gradient(135deg,#e2ecfd 0%,#ece7fb 100%);border-color:#7c3aed33}
+.hero-plan{background:var(--hero-plan-grad);border-color:var(--hero-plan-border)}
 .hero-plan::before{background:radial-gradient(circle,#7c3aed1a 0%,transparent 70%)}
 .hero-confirmed[draggable=true]{cursor:grab}
 .hero-confirmed[draggable=true]:active{cursor:grabbing}
-.pin-grip{position:absolute;top:10px;left:12px;color:rgba(23,32,54,.35);font-size:1rem;letter-spacing:-2px;cursor:grab;user-select:none;z-index:3}
-.pin-remove{position:absolute;top:8px;right:8px;background:rgba(23,32,54,.05);border:1px solid rgba(23,32,54,.12);border-radius:99px;width:26px;height:26px;font-size:.72rem;color:var(--muted);display:flex;align-items:center;justify-content:center;z-index:3;padding:0;line-height:1;transition:all .15s;cursor:pointer}
+.pin-grip{position:absolute;top:10px;left:12px;color:var(--on-hero-dim);font-size:1rem;letter-spacing:-2px;cursor:grab;user-select:none;z-index:3}
+.pin-remove{position:absolute;top:8px;right:8px;background:var(--on-hero-btn-bg);border:1px solid var(--on-hero-btn-border);border-radius:99px;width:26px;height:26px;font-size:.72rem;color:var(--muted);display:flex;align-items:center;justify-content:center;z-index:3;padding:0;line-height:1;transition:all .15s;cursor:pointer}
 .pin-remove:hover{background:var(--red);border-color:var(--red);color:#fff}
 .pin-dragging{opacity:.4}
 .pin-dragover{outline:2px dashed var(--accent);outline-offset:3px}
@@ -660,7 +651,7 @@ body.role-admin .admin-only.admin-inline{display:inline-flex}
 .hero-prog{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
 .hero-prog-status{font-size:.74rem;font-weight:600;padding:3px 10px;border-radius:99px;background:color-mix(in srgb, var(--c) 16%, transparent);color:var(--c);border:1px solid var(--c)}
 .hero-prog-bars{display:flex;align-items:center;gap:8px;flex:1;min-width:160px}
-.hero-prog .trip-prog{flex:1;background:rgba(23,32,54,.10)}
+.hero-prog .trip-prog{flex:1;background:var(--track)}
 .hero-prog .trip-prog-pct{color:var(--text);font-size:.78rem;font-weight:700}
 
 /* Panneau latéral (volets déroulants) */
@@ -796,7 +787,7 @@ html{scrollbar-color:var(--border-strong) transparent}
 ::-webkit-scrollbar{width:11px;height:11px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px;border:3px solid var(--bg)}
-::-webkit-scrollbar-thumb:hover{background:#9fb0c8}
+::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-hover)}
 input,textarea{caret-color:var(--accent)}
 input,textarea,select,button{accent-color:var(--accent)}
 
@@ -807,6 +798,9 @@ input,textarea,select,button{accent-color:var(--accent)}
 }
 input::placeholder,textarea::placeholder{color:var(--text-dim)}
 input[type=date],input[type=time],input[type=number]{color-scheme:light}
+/* Masque les flèches natives moches des champs numériques (partout dans l'app) */
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 /* ── Cartes : ombre douce + transition cohérente ── */
 .card{box-shadow:var(--shadow-sm);transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease)}
@@ -815,7 +809,7 @@ input[type=date],input[type=time],input[type=number]{color-scheme:light}
 .stat-card:active{transform:translateY(0)}
 
 /* ── Modale : entrée animée + fond flouté ── */
-.modal-overlay{background:rgba(0,0,0,.62);backdrop-filter:blur(4px);animation:overlay-in var(--dur) var(--ease)}
+.modal-overlay{background:var(--scrim);backdrop-filter:blur(4px);animation:overlay-in var(--dur) var(--ease)}
 .modal{box-shadow:var(--shadow-xl);animation:modal-in var(--dur-slow) var(--ease-out)}
 @keyframes overlay-in{from{opacity:0}to{opacity:1}}
 @keyframes modal-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}

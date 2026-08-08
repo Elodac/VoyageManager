@@ -1,10 +1,10 @@
 /* ============================================================
    tokens.css — design system VoyageManager
-   Couleurs · typographie · espacements · rayons · ombres · motion
+   Thème CLAIR par défaut (:root) · thème SOMBRE ([data-theme="dark"])
    ============================================================ */
 :root {
   color-scheme: light;
-  /* ── Couleurs de surface (thème clair, bleu ciel / blanc, lumineux) ── */
+  /* ── Surfaces (clair : bleu ciel / blanc) ── */
   --bg: #eef4fc;
   --bg2: #ffffff;
   --bg3: #f2f6fc;
@@ -17,7 +17,7 @@
   --muted: #55647d;
   --text-dim: #8593a8;
 
-  /* ── Couleurs de marque / sémantiques ── */
+  /* ── Marque / sémantique ── */
   --accent: #2563eb;
   --accent-hover: #1d4ed8;
   --accent-weak: rgba(37,99,235,.10);
@@ -32,6 +32,31 @@
   --red-weak: rgba(220,38,38,.10);
   --purple: #7c3aed;
 
+  /* ── Ombres (douces sur fond clair) ── */
+  --shadow-sm: 0 1px 2px rgba(23,32,54,.06);
+  --shadow: 0 4px 16px rgba(23,32,54,.10);
+  --shadow-lg: 0 12px 30px rgba(23,32,54,.14);
+  --shadow-xl: 0 24px 60px rgba(23,32,54,.20);
+  --ring: 0 0 0 3px var(--accent-weak);
+
+  /* ── Valeurs propres au thème (référencées dans main.css) ── */
+  --map-bg: #dbe7f3;
+  --gate-grad: #d7e6fe;
+  --scrollbar-hover: #9fb0c8;
+  --scrim: rgba(23,32,54,.45);
+  --hero-conf-grad: linear-gradient(135deg,#e5f7ec 0%,#e0edfe 100%);
+  --hero-conf-border: #16a34a33;
+  --hero-plan-grad: linear-gradient(135deg,#e2ecfd 0%,#ece7fb 100%);
+  --hero-plan-border: #7c3aed33;
+  --hero-sub: #15803d;
+  --hero-pill-bg: rgba(255,255,255,.7);
+  --hero-pill-border: rgba(22,163,74,.25);
+  --hero-pill-text: #15532c;
+  --on-hero-dim: rgba(23,32,54,.35);
+  --on-hero-btn-bg: rgba(23,32,54,.05);
+  --on-hero-btn-border: rgba(23,32,54,.12);
+  --track: rgba(23,32,54,.10);
+
   /* ── Rayons ── */
   --radius-sm: 8px;
   --radius: 12px;
@@ -39,37 +64,70 @@
   --radius-lg: 18px;
   --radius-full: 999px;
 
-  /* ── Ombres ── */
-  --shadow-sm: 0 1px 2px rgba(23,32,54,.06);
-  --shadow: 0 4px 16px rgba(23,32,54,.10);
-  --shadow-lg: 0 12px 30px rgba(23,32,54,.14);
-  --shadow-xl: 0 24px 60px rgba(23,32,54,.20);
-  --ring: 0 0 0 3px var(--accent-weak);
-
   /* ── Espacements (échelle 4px) ── */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
-  --sp-8: 32px;
-  --sp-10: 40px;
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
 
   /* ── Typographie ── */
   --font-display: 'Sora', 'Inter', system-ui, sans-serif;
-  --fs-xs: .74rem;
-  --fs-sm: .82rem;
-  --fs-base: .9rem;
-  --fs-md: 1rem;
-  --fs-lg: 1.15rem;
-  --fs-xl: 1.4rem;
-  --fs-2xl: 1.8rem;
+  --fs-xs: .74rem; --fs-sm: .82rem; --fs-base: .9rem; --fs-md: 1rem;
+  --fs-lg: 1.15rem; --fs-xl: 1.4rem; --fs-2xl: 1.8rem;
 
   /* ── Motion ── */
   --ease: cubic-bezier(.4,0,.2,1);
   --ease-out: cubic-bezier(.16,1,.3,1);
-  --dur-fast: .12s;
-  --dur: .18s;
-  --dur-slow: .28s;
+  --dur-fast: .12s; --dur: .18s; --dur-slow: .28s;
+}
+
+/* ============================================================
+   THÈME SOMBRE — ancienne palette « nuit indigo profonde »
+   ============================================================ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0f1a;
+  --bg2: #131a2b;
+  --bg3: #1d2740;
+  --bg-hover: #27324f;
+  --border: #2c3852;
+  --border-strong: #41527a;
+
+  --text: #eaf0fb;
+  --muted: #9fabc6;
+  --text-dim: #6d7b99;
+
+  --accent: #4f6ef5;
+  --accent-hover: #6d8bff;
+  --accent-weak: rgba(79,110,245,.16);
+  --accent2: #22d3ee;
+  --grad-primary: linear-gradient(135deg, #5b7cfa 0%, #7c6ef0 100%);
+  --grad-brand: linear-gradient(135deg, #6d8bff 0%, #22d3ee 100%);
+  --green: #2ecc71;
+  --green-weak: rgba(46,204,113,.15);
+  --yellow: #f5a623;
+  --yellow-weak: rgba(245,166,35,.15);
+  --red: #f2555a;
+  --red-weak: rgba(242,85,90,.15);
+  --purple: #a78bfa;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.28);
+  --shadow: 0 4px 16px rgba(0,0,0,.32);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,.42);
+  --shadow-xl: 0 24px 60px rgba(0,0,0,.55);
+
+  --map-bg: #0b0e14;
+  --gate-grad: #1a2740;
+  --scrollbar-hover: #4a597a;
+  --scrim: rgba(0,0,0,.62);
+  --hero-conf-grad: linear-gradient(135deg,#0a3d1f 0%,#0f2d44 100%);
+  --hero-conf-border: #22c55e44;
+  --hero-plan-grad: linear-gradient(135deg,#0f2d44 0%,#231b3d 100%);
+  --hero-plan-border: #6366f155;
+  --hero-sub: #86efac;
+  --hero-pill-bg: #ffffff14;
+  --hero-pill-border: #ffffff22;
+  --hero-pill-text: var(--text);
+  --on-hero-dim: #ffffff55;
+  --on-hero-btn-bg: #ffffff14;
+  --on-hero-btn-border: #ffffff22;
+  --track: #ffffff22;
 }
