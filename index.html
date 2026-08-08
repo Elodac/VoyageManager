@@ -309,12 +309,12 @@ document.write('<link rel="stylesheet" href="styles/main.css'+v+'">');
 <section class="page" id="page-carte">
   <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:16px">📍 Carte des destinations</h1>
   <div class="map-controls">
-    <button class="btn btn-sm btn-outline" onclick="mapShowAll()">🌍 Toutes</button>
-    <button class="btn btn-sm btn-outline" onclick="mapFilter('confirme')">✅ Confirmé</button>
-    <button class="btn btn-sm btn-outline" onclick="mapFilter('planification')">🔍 Planification</button>
-    <button class="btn btn-sm btn-outline" onclick="mapFilter('projet')">📋 Projets</button>
-    <button class="btn btn-sm btn-outline" onclick="mapFilter('projet_longterme')">🌍 Long courrier</button>
-    <button class="btn btn-sm btn-outline" onclick="mapShowPOIs()">📌 POIs Crète</button>
+    <button class="filtre-btn active" data-mf="all" onclick="mapSetFilter('all')">🌍 Toutes</button>
+    <button class="filtre-btn" data-mf="confirme" onclick="mapSetFilter('confirme')">✅ Confirmé</button>
+    <button class="filtre-btn" data-mf="planification" onclick="mapSetFilter('planification')">🔍 Planification</button>
+    <button class="filtre-btn" data-mf="projet" onclick="mapSetFilter('projet')">📋 Projets Europe</button>
+    <button class="filtre-btn" data-mf="projet_longterme" onclick="mapSetFilter('projet_longterme')">🌍 Long courrier</button>
+    <span class="map-count" id="map-count"></span>
   </div>
   <div id="map-container">
     <div id="map"></div>
@@ -2416,38 +2416,42 @@ function showTab(name) {
 let clusterGroup = null;
 
 function initMap() {
-  map = L.map('map', { zoomControl: true }).setView([45, 10], 3);
+  map = L.map('map', { zoomControl: true, worldCopyJump: true, minZoom: 2 }).setView([46, 4], 4);
+  map.setMaxBounds([[-85, -200], [85, 200]]);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap · © CartoDB',
     maxZoom: 18
   }).addTo(map);
-  mapShowAll();
+  mapSetFilter('all');
   // Force resize après affichage
   setTimeout(() => map.invalidateSize(), 150);
 }
 
 const COLOR_MAP = { confirme:'#22c55e', planification:'#f59e0b', projet:'#6366f1', projet_longterme:'#8b5cf6' };
 
-function makeIcon(color, emoji, size=36) {
+function makeIcon(color, emoji, size=32) {
   return L.divIcon({
-    html: `<div style="background:${color};border:2px solid #fff;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${size*0.44}px;box-shadow:0 2px 8px #0008;cursor:pointer">${emoji}</div>`,
+    html: `<div class="vm-marker" style="--mc:${color};width:${size}px;height:${size}px;font-size:${Math.round(size*0.46)}px">${emoji}</div>`,
     iconSize: [size, size],
     iconAnchor: [size/2, size/2],
-    popupAnchor: [0, -size/2-4],
-    className: ''
+    popupAnchor: [0, -size/2-2],
+    className: 'vm-marker-wrap'
   });
 }
 
 function popupHTML(d) {
+  const col = COLOR_MAP[d.statut] || '#8892a4';
+  const st = STATUT_CONFIG[d.statut]?.label || '';
   return `<div class="popup-content">
     <h4>${d.emoji} ${d.nom}</h4>
-    <p>${d.pays} · ${STATUT_CONFIG[d.statut]?.label || ''}</p>
+    <p>${d.pays}${st ? ` · <span style="color:${col};font-weight:600">${st}</span>` : ''}</p>
     <div class="popup-meta">
       <span class="popup-tag">💶 ${d.budget_min}–${d.budget_max}€</span>
-      <span class="popup-tag">✈️ ${d.vol_prix || '—'}</span>
+      ${d.vol_prix ? `<span class="popup-tag">✈️ ${d.vol_prix}</span>` : ''}
     </div>
-    <div style="margin-top:8px">
-      <a href="#" onclick="openDest('${d.id}');return false" style="font-size:.78rem;color:#60a5fa;font-weight:600">📋 Voir la fiche →</a>
+    <div class="popup-actions">
+      <button class="popup-btn" onclick="openDest('${d.id}')">📋 Fiche</button>
+      <button class="popup-btn primary" onclick="createVoyageFromDest('${d.id}')">➕ Créer un voyage</button>
     </div>
   </div>`;
 }
@@ -2460,12 +2464,15 @@ function clearMarkers() {
 
 function addToCluster(markers) {
   clusterGroup = L.markerClusterGroup({
-    maxClusterRadius: 40,
+    maxClusterRadius: 45,
+    showCoverageOnHover: false,
+    spiderfyOnMaxZoom: true,
     iconCreateFunction(cluster) {
       const count = cluster.getChildCount();
+      const size = count < 10 ? 38 : count < 30 ? 46 : 54;
       return L.divIcon({
-        html: `<div style="background:rgba(59,130,246,.85);border:2px solid #fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;box-shadow:0 2px 8px #0008">${count}</div>`,
-        iconSize: [38,38], iconAnchor:[19,19], className:''
+        html: `<div class="vm-cluster" style="width:${size}px;height:${size}px;font-size:${count < 100 ? 15 : 13}px">${count}</div>`,
+        iconSize: [size, size], iconAnchor: [size/2, size/2], className: 'vm-marker-wrap'
       });
     }
   });
@@ -2473,28 +2480,41 @@ function addToCluster(markers) {
   map.addLayer(clusterGroup);
 }
 
-function mapShowAll() {
-  clearMarkers();
-  const markers = DESTINATIONS.map(d => {
+function buildMarkers(list) {
+  return list.map(d => {
     const color = COLOR_MAP[d.statut] || '#8892a4';
     const m = L.marker(d.coords, { icon: makeIcon(color, d.emoji) });
-    m.bindPopup(popupHTML(d), { maxWidth: 260 });
+    m.bindPopup(popupHTML(d), { maxWidth: 260, closeButton: true });
     return m;
   });
-  addToCluster(markers);
+}
+
+function updateMapCount(n) {
+  const el = document.getElementById('map-count');
+  if(el) el.textContent = n + ' destination' + (n > 1 ? 's' : '');
+}
+
+function mapSetFilter(v) {
+  document.querySelectorAll('.map-controls .filtre-btn').forEach(b => b.classList.toggle('active', b.dataset.mf === v));
+  if(v === 'all') mapShowAll(); else mapFilter(v);
+}
+
+function mapShowAll() {
+  clearMarkers();
+  addToCluster(buildMarkers(DESTINATIONS));
+  updateMapCount(DESTINATIONS.length);
 }
 
 function mapFilter(statut) {
   clearMarkers();
   const filtered = DESTINATIONS.filter(d => !statut || d.statut === statut);
-  const markers = filtered.map(d => {
-    const color = COLOR_MAP[d.statut] || '#8892a4';
-    const m = L.marker(d.coords, { icon: makeIcon(color, d.emoji) });
-    m.bindPopup(popupHTML(d), { maxWidth: 260 });
-    return m;
-  });
-  addToCluster(markers);
+  addToCluster(buildMarkers(filtered));
+  updateMapCount(filtered.length);
   if(filtered.length === 1) map.setView(filtered[0].coords, 8);
+  else if(filtered.length) {
+    const grp = L.featureGroup(mapMarkers.length ? mapMarkers : clusterGroup.getLayers());
+    try { map.fitBounds(clusterGroup.getBounds().pad(0.2)); } catch(e){}
+  }
 }
 
 function mapShowPOIs() {
