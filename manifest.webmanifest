@@ -1,0 +1,16 @@
+{
+  "name": "VoyageManager",
+  "short_name": "Voyages",
+  "description": "Planifiez, organisez et centralisez tous vos voyages depuis une seule application.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef4fc",
+  "theme_color": "#eef4fc",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["travel", "productivity"]
+}

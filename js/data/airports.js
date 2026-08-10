@@ -38,3 +38,7 @@ const FR_CITIES = [
   { nom: 'Montpellier', coords: [43.6108, 3.8767] },
   { nom: 'Angers',      coords: [47.4784, -0.5632] },
 ];
+
+// ── Exposition pour les modules (scripts classiques : `const` de haut
+// niveau n'atterrit pas sur window) ──
+Object.assign(window, { AIRPORTS, FR_CITIES });

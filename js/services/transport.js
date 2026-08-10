@@ -1,65 +1,85 @@
 // ============================================================
 // services/transport.js — comparateur voiture / avion (estimation)
-// Estimations paramétrables, prêtes à être remplacées par des API.
+// Les paramètres viennent des préférences utilisateur (core/prefs.js),
+// plus aucune valeur de véhicule ou de ville codée en dur ici.
 // ============================================================
 
-const DEFAULTS = {
-  conso: 6.5,        // L/100km
-  prix: 1.85,        // €/L
-  tollRate: 0.075,   // €/km sur autoroute
+/** Constantes physiques du modèle (indépendantes de l'utilisateur). */
+const TRANSPORT_MODEL = {
   speedToll: 105,    // km/h moyenne avec autoroute
   speedNoToll: 72,   // km/h moyenne sans péage
   cruiseSpeed: 750,  // km/h vitesse de croisière avion
+  taxiTime: 0.6,     // h — roulage, montée, descente
+  toAirport: 0.75,   // h — trajet vers l'aéroport
+  wait: 2,           // h — enregistrement + attente
+  fromArrival: 1,    // h — sortie d'aéroport + trajet vers l'hébergement
 };
+
+/** Paramètres issus des préférences, surchargeables ponctuellement. */
+function transportDefaults(opt) {
+  const p = getPrefs();
+  return Object.assign({
+    conso: p.carConso,
+    prix: p.carFuelPrice,
+    tollRate: p.tollRate,
+  }, TRANSPORT_MODEL, opt || {});
+}
 
 /** Les n aéroports les plus proches d'un point [lat, lon]. */
 function nearestAirports(coords, n = 3) {
+  const seen = new Set();
   return AIRPORTS
     .map(a => ({ ...a, dist: Math.round(haversine(coords, a.coords)) }))
     .sort((x, y) => x.dist - y.dist)
-    .filter((a, i, arr) => arr.findIndex(b => b.iata === a.iata) === i) // dédoublonne par IATA
+    .filter(a => { if (seen.has(a.iata)) return false; seen.add(a.iata); return true; })
     .slice(0, n);
 }
 
 /** Comparatif voiture entre deux points, avec/sans péages. */
-function compareCar(from, to, opt = {}) {
-  const o = { ...DEFAULTS, ...opt };
+function compareCar(from, to, opt) {
+  const o = transportDefaults(opt);
   const km = roadDistance(from, to);
   const fuel = km / 100 * o.conso * o.prix;
   const tolls = km * o.tollRate;
-  const timeToll = km / o.speedToll;
-  const timeNoToll = km / o.speedNoToll;
   return {
     km: Math.round(km),
     fuel: Math.round(fuel),
     tolls: Math.round(tolls),
     totalToll: Math.round(fuel + tolls),
     totalNoToll: Math.round(fuel),
-    timeToll, timeNoToll,
-    dTime: timeNoToll - timeToll,   // temps perdu sans péage
-    economy: Math.round(tolls),     // € économisés sans péage
+    timeToll: km / o.speedToll,
+    timeNoToll: km / o.speedNoToll,
+    dTime: km / o.speedNoToll - km / o.speedToll,
+    economy: Math.round(tolls),
   };
 }
 
 /** Comparatif avion : aéroport de départ → coordonnées d'arrivée. */
-function comparePlane(from, to, opt = {}) {
-  const o = { ...DEFAULTS, ...opt };
-  const dep = opt.depAirport || nearestAirports(from, 1)[0];
+function comparePlane(from, to, opt) {
+  const o = transportDefaults(opt);
+  const dep = (opt && opt.depAirport) || nearestAirports(from, 1)[0];
   const km = haversine(dep.coords, to);
-  const flightTime = km / o.cruiseSpeed + 0.6;        // vol + roulage/montée
-  const toAirport = 0.75, wait = 2, fromArrival = 1;  // trajets + attente
+  const flightTime = km / o.cruiseSpeed + o.taxiTime;
   return {
     dep,
     km: Math.round(km),
     flightTime,
-    toAirport, wait, fromArrival,
-    globalTime: toAirport + wait + flightTime + fromArrival,
+    toAirport: o.toAirport, wait: o.wait, fromArrival: o.fromArrival,
+    globalTime: o.toAirport + o.wait + flightTime + o.fromArrival,
   };
 }
 
-/** Recommandation simple selon distance routière et pays. */
-function recommend(dest, car) {
-  const inFrance = /France/i.test(dest.pays || '');
-  if (inFrance && car.km <= 800) return 'voiture';
+/**
+ * Recommandation : la voiture l'emporte tant que le temps porte-à-porte
+ * reste comparable et que la distance reste raisonnable.
+ */
+function recommend(dest, car, plane) {
+  if (car.km <= 400) return 'voiture';
+  if (car.km > 1500) return 'avion';
+  if (plane && car.timeToll <= plane.globalTime + 1.5) return 'voiture';
   return 'avion';
 }
+
+Object.assign(window, {
+  TRANSPORT_MODEL, transportDefaults, nearestAirports, compareCar, comparePlane, recommend,
+});

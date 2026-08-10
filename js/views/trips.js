@@ -1,102 +1,57 @@
 // ============================================================
-// views/trips.js — "Mes voyages" : cartes + suivi d'avancement
-// (Phase 1C — refonte modulaire)
+// views/trips.js — modale « Préparation & suivi » d'un voyage
+//
+// Le statut réel du voyage (les 8 états de TRIP_STATUS) est
+// désormais éditable : il était masqué derrière un sélecteur de
+// catégorie de destination, ce qui rendait le modèle inatteignable.
+// La catégorie du catalogue est maintenant dérivée automatiquement.
 // ============================================================
 (function () {
 
-// ── Utilitaires de rendu ────────────────────────────────
-function chip(color, label, extra = '') {
-  return `<span class="status-chip" style="--c:${color}" ${extra}>${label}</span>`;
-}
-
-function progressBar(pct) {
-  const color = pct >= 80 ? 'var(--green)' : pct >= 40 ? 'var(--yellow)' : 'var(--muted)';
-  return `<div class="trip-prog"><div class="trip-prog-bar" style="width:${pct}%;background:${color}"></div></div>
+function progressBar(pct, label) {
+  const color = pct >= 80 ? 'var(--green)' : pct >= 40 ? 'var(--yellow)' : 'var(--border-strong)';
+  return `<div class="trip-prog" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
+               ${label ? `aria-label="${escAttr(label)}"` : ''}>
+            <div class="trip-prog-bar" style="width:${pct}%;background:${color}"></div>
+          </div>
           <span class="trip-prog-pct">${pct}%</span>`;
 }
 
-function tripCardHTML(t) {
-  const meta = tripStatusMeta(t.status);
-  const pct = progress(t);
-  const dates = t.date_depart ? `${t.date_depart} → ${t.date_retour || '?'}` : 'Dates à définir';
-  return `
-    <div class="trip-card" data-trip="${t.id}">
-      <button class="trip-del" data-del-trip-card="${t.id}" title="Supprimer ce voyage" aria-label="Supprimer ce voyage">✕</button>
-      <div class="trip-card-top">
-        <span class="trip-emoji">${_esc(t.emoji || '✈️')}</span>
-        <div class="trip-card-head">
-          <div class="trip-name">${_esc(t.nom)}</div>
-          <div class="trip-dates">${_esc(dates)}</div>
-        </div>
-      </div>
-      <div class="trip-badge" style="--c:${meta.color}">${meta.label}</div>
-      <div class="trip-prog-row">${progressBar(pct)}</div>
-    </div>`;
-}
-
-// ── Grille dashboard ────────────────────────────────────
-function renderMount() {
-  const mount = document.getElementById('trips-mount');
-  if (!mount) return;
-  const trips = getTrips();
-  if (!trips.length) {
-    mount.innerHTML = `<p style="color:var(--muted);font-size:.85rem">Aucun voyage. Crée-en un depuis une destination.</p>`;
-    return;
-  }
-  mount.innerHTML = `<div class="trip-grid">${trips.map(tripCardHTML).join('')}</div>`;
-}
-
-// ── Modale détail / suivi ───────────────────────────────
-function ensureModal() {
-  let ov = document.getElementById('trip-modal-overlay');
-  if (ov) return ov;
-  ov = document.createElement('div');
-  ov.id = 'trip-modal-overlay';
-  ov.className = 'modal-overlay hidden';
-  ov.innerHTML = `<div class="modal" id="trip-modal" style="max-width:680px"></div>`;
-  document.body.appendChild(ov);
-  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.add('hidden'); });
-  return ov;
-}
-
-const _esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
 function elementRow(label, emoji, type, statusKey, dataAttr, value, editKey) {
   const opts = ELEMENT_STATUS[type];
-  const editable = editKey != null
-    ? `<div class="el-value" data-edit="${editKey}" data-val="${_esc(value)}" title="Double-clique pour modifier">${value ? _esc(value) : '<em>à préciser…</em>'}</div>`
-    : '';
   return `
     <div class="el-row">
       <div class="el-label">
-        <div>${emoji} ${label}</div>
-        ${editable}
+        <div>${emoji} ${escHtml(label)}</div>
+        ${editKey != null ? `<button type="button" class="el-value" data-edit="${escAttr(editKey)}"
+           data-val="${escAttr(value || '')}" title="Cliquer pour modifier">
+           ${value ? escHtml(value) : '<em>à préciser…</em>'}</button>` : ''}
       </div>
-      <div class="el-chips">
-        ${opts.map(o => `<button class="status-chip ${o.key === statusKey ? 'on' : ''}" style="--c:${o.color}"
-            ${dataAttr}="${o.key}">${o.label}</button>`).join('')}
+      <div class="el-chips" role="group" aria-label="Statut ${escAttr(label)}">
+        ${opts.map(o => `<button type="button" class="status-chip ${o.key === statusKey ? 'on' : ''}"
+            style="--c:${o.color}" ${dataAttr}="${escAttr(o.key)}"
+            aria-pressed="${o.key === statusKey ? 'true' : 'false'}">${escHtml(o.label)}</button>`).join('')}
       </div>
     </div>`;
 }
 
-// Édition inline d'un intitulé (transport/hébergement/activité) au double-clic
+// ── Édition d'un intitulé au clic ────────────────────────
 function startInlineEdit(el, id) {
   const kind = el.dataset.edit;
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'add-item-input';
   input.value = el.dataset.val || '';
-  input.style.width = '100%';
   el.replaceWith(input);
   input.focus(); input.select();
   let done = false;
-  const finish = (commit) => {
-    if (done) return; done = true;
+  const finish = commit => {
+    if (done) return;
+    done = true;
     if (commit) {
       const v = input.value.trim();
       updateTrip(id, t2 => {
         if (kind === 'transport') return { transport: { ...t2.transport, label: v } };
-        if (kind === 'hebergement') return { hebergement: { ...t2.hebergement, nom: v } };
         if (kind.startsWith('act:')) {
           const i = +kind.slice(4);
           const acts = (t2.activites || []).slice();
@@ -115,288 +70,271 @@ function startInlineEdit(el, id) {
   input.addEventListener('blur', () => finish(true));
 }
 
-// Section « Choisir son logement » : outils de recherche + fiche saisie par l'utilisateur
+// ── Section logement ─────────────────────────────────────
 function lodgingSectionHTML(t) {
   const h = t.hebergement || {};
-  const dest = (window.DESTINATIONS || []).find(d => d.id === t.destinationId) || {};
-  const cityRaw = (dest.nom || t.nom || '').split('—')[0].trim();
-  const city = encodeURIComponent(cityRaw + ' ' + (t.pays || dest.pays || ''));
-  const ci = t.date_depart || '', co = t.date_retour || '';
-  const tools = [
-    ['🅱️ Booking', `https://www.booking.com/searchresults.fr.html?ss=${city}&checkin=${ci}&checkout=${co}&group_adults=2`],
-    ['🏠 Airbnb', `https://www.airbnb.fr/s/${city}/homes${ci ? '?checkin=' + ci + '&checkout=' + co + '&adults=2' : ''}`],
-    ['🏨 Hotels.com', `https://fr.hotels.com/search.do?q-destination=${city}${ci ? '&q-check-in=' + ci + '&q-check-out=' + co : ''}`],
-    ['🔷 Google Hotels', `https://www.google.com/travel/search?q=${city}%20h%C3%B4tel`],
-    ['🟡 Expedia', `https://www.expedia.fr/Hotel-Search?destination=${city}${ci ? '&startDate=' + ci + '&endDate=' + co : ''}`],
-    ['🟧 Abritel', `https://www.abritel.fr/search?q=${city}${ci ? '&startDate=' + ci + '&endDate=' + co : ''}`],
-  ];
-  const opts = ELEMENT_STATUS['hebergement'];
-  const F = (id, ph, val, type) => `<input id="${id}" class="add-item-input lg-field" type="${type || 'text'}" placeholder="${ph}" value="${_esc(val || '')}">`;
+  const ctx = bookingContext({ trip: t });
+  const tools = lodgingLinks({ trip: t });
+  const F = (id, lbl, val, type) => `
+    <div class="adv-field">
+      <label for="${id}">${escHtml(lbl)}</label>
+      <input id="${id}" class="add-item-input lg-field" type="${type || 'text'}" value="${escAttr(val || '')}">
+    </div>`;
   return `
-    <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 8px">🏨 Choisir son logement</h3>
-    <div class="lodging-tools">${tools.map(x => `<a class="mini-btn" target="_blank" rel="noopener" href="${x[1]}">${x[0]}</a>`).join('')}</div>
-    <p class="lodging-hint">Compare les logements sur ces plateformes, puis enregistre ci-dessous celui que tu retiens. Rien n'est imposé.</p>
+    <h3 class="section-title">🏨 Choisir son logement</h3>
+    <div class="lodging-tools">${tools.map(x =>
+      `<a class="mini-btn" target="_blank" rel="noopener noreferrer" href="${safeUrl(x.url)}">${escHtml(x.emoji)} ${escHtml(x.label)}</a>`).join('')}</div>
+    <p class="lodging-hint">${ctx.hasDates
+      ? `Recherches pré-remplies du <strong>${escHtml(ctx.checkin)}</strong> au <strong>${escHtml(ctx.checkout)}</strong> pour ${escHtml(ctx.travelers)} personne(s).`
+      : 'Renseigne les dates du voyage ci-dessous pour que les recherches soient pré-remplies.'}
+      Compare, puis enregistre le logement retenu.</p>
     <div class="lodging-form">
       ${F('lg-nom', 'Nom du logement', h.nom)}
       ${F('lg-lien', 'Lien (Booking / Airbnb…)', h.lien, 'url')}
       ${F('lg-adresse', 'Adresse', h.adresse)}
       ${F('lg-prix', 'Prix (ex : 95€/nuit)', h.prix)}
-      <label class="lg-lbl">🛬 Arrivée<div class="lg-dt">${F('lg-ci-date', '', h.checkinDate || ci, 'date')}${F('lg-ci-time', '', h.checkinTime, 'time')}</div></label>
-      <label class="lg-lbl">🛫 Départ<div class="lg-dt">${F('lg-co-date', '', h.checkoutDate || co, 'date')}${F('lg-co-time', '', h.checkoutTime, 'time')}</div></label>
+      ${F('lg-ci-date', '🛬 Date d\'arrivée', h.checkinDate || ctx.checkin, 'date')}
+      ${F('lg-ci-time', '🛬 Heure d\'arrivée', h.checkinTime, 'time')}
+      ${F('lg-co-date', '🛫 Date de départ', h.checkoutDate || ctx.checkout, 'date')}
+      ${F('lg-co-time', '🛫 Heure de départ', h.checkoutTime, 'time')}
       ${F('lg-tel', '📞 Téléphone', h.tel, 'tel')}
       ${F('lg-email', '✉️ Email', h.email, 'email')}
-      <textarea id="lg-notes" class="add-item-input lg-field lg-notes" placeholder="Notes / commentaires (code d'accès, contact, à savoir…)">${_esc(h.notes || '')}</textarea>
+      <div class="adv-field lg-full">
+        <label for="lg-notes">Notes (code d'accès, contact, à savoir…)</label>
+        <textarea id="lg-notes" class="add-item-input lg-field lg-notes">${escHtml(h.notes || '')}</textarea>
+      </div>
     </div>
-    <div class="el-chips" style="margin-top:8px">${opts.map(o => `<button class="status-chip ${o.key === h.status ? 'on' : ''}" style="--c:${o.color}" data-hebergement="${o.key}">${o.label}</button>`).join('')}</div>
-    <button class="btn btn-success btn-sm" id="lodging-save" style="margin-top:10px">💾 Enregistrer le logement</button>`;
+    <div class="el-chips mt-sm" role="group" aria-label="Statut de l'hébergement">
+      ${ELEMENT_STATUS.hebergement.map(o => `<button type="button" class="status-chip ${o.key === h.status ? 'on' : ''}"
+        style="--c:${o.color}" data-hebergement="${escAttr(o.key)}"
+        aria-pressed="${o.key === h.status ? 'true' : 'false'}">${escHtml(o.label)}</button>`).join('')}
+    </div>
+    <button type="button" class="btn btn-success btn-sm mt-sm" id="lodging-save">💾 Enregistrer le logement</button>`;
 }
 
+// ── Modale ───────────────────────────────────────────────
 function openTripModal(id) {
   const t = getTrip(id);
   if (!t) return;
-  const ov = ensureModal();
-  const meta = tripStatusMeta(t.status);
+  const ov = ensureOverlay('trip-modal-overlay', 'trip-modal-title');
   const pct = progress(t);
-  const m = document.getElementById('trip-modal');
-  m.innerHTML = `
-    <div class="modal-header">
-      <div class="modal-emoji">${_esc(t.emoji || '✈️')}</div>
-      <div class="modal-title">
-        <h2>${_esc(t.nom)}</h2>
-        <div style="color:var(--muted);font-size:.85rem">${_esc(t.pays || '')} · ${t.date_depart ? _esc(t.date_depart + ' → ' + (t.date_retour || '?')) : 'Dates à définir'}</div>
-      </div>
-      <button class="modal-close" data-close>✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="trip-status-block">
-        <div class="el-label" style="margin-bottom:8px">🗂️ État du voyage</div>
-        <select class="cat-select" id="trip-cat-select" style="width:100%;max-width:340px">
-          <option value="confirme">✅ Confirmé</option>
-          <option value="planification">🔍 En planification</option>
-          <option value="projet">📋 Projet Europe</option>
-          <option value="projet_longterme">🌍 Long courrier</option>
-          <option value="aucun">➖ Retirer du suivi (archiver)</option>
-        </select>
-        <div class="trip-prog-row" style="margin-top:14px">${progressBar(pct)}</div>
-      </div>
+  const d = destById(t.destinationId) || {};
 
-      <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">🧩 Avancement par élément</h3>
-      ${elementRow('Transport', '✈️', 'transport', t.transport.status, 'data-transport', t.transport.label, 'transport')}
-      ${lodgingSectionHTML(t)}
-
-      <div class="el-label" style="margin:14px 0 8px;display:flex;align-items:center;gap:8px">
-        🎯 Activités
-        <button class="btn btn-outline btn-sm" data-add-act style="margin-left:auto;padding:3px 10px">➕ Ajouter</button>
-      </div>
-      <div class="act-list">
-        ${(t.activites || []).map((a, i) => {
-          const am = elStatusMeta('activite', a.status);
-          return `<div class="act-item">
-            <span class="act-name el-value" data-edit="act:${i}" data-val="${_esc(a.nom)}" title="Double-clique pour modifier">${_esc(a.nom)}</span>
-            <button class="status-chip on" style="--c:${am.color}" data-act="${i}">${am.label}</button>
-            <button class="act-del" data-del-act="${i}" title="Supprimer l'activité">✕</button>
-          </div>`;
-        }).join('') || '<div style="font-size:.8rem;color:var(--muted)">Aucune activité. Clique sur « Ajouter ».</div>'}
-      </div>
-
-      <div class="info-box" style="margin-top:16px;font-size:.8rem">
-        💡 Clique sur un statut pour le changer · <strong>double-clique</strong> sur un intitulé (transport, activité) pour le modifier · la progression se met à jour toute seule.
-      </div>
-
-      <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">📅 Dates du voyage</h3>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-        <div class="adv-field" style="min-width:140px">
-          <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Départ</label>
-          <input type="date" class="add-item-input" id="trip-date-dep" value="${t.date_depart||''}" style="font-size:.82rem">
+  ov.innerHTML = `
+    <div class="modal" id="trip-modal" role="document">
+      <div class="modal-header">
+        <span class="modal-emoji" aria-hidden="true">${escHtml(t.emoji || '✈️')}</span>
+        <div class="modal-title">
+          <h2 id="trip-modal-title">${escHtml(t.nom)}</h2>
+          <p class="modal-sub">${escHtml(t.pays || '')}${t.date_depart
+            ? ' · ' + escHtml(t.date_depart + ' → ' + (t.date_retour || '?')) : ' · Dates à définir'}</p>
         </div>
-        <div class="adv-field" style="min-width:140px">
-          <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Retour</label>
-          <input type="date" class="add-item-input" id="trip-date-ret" value="${t.date_retour||''}" style="font-size:.82rem">
+        <button type="button" class="modal-close" data-close aria-label="Fermer">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <section class="trip-status-block">
+          <h3 class="el-label">🗂️ État du voyage</h3>
+          <div class="el-chips" role="group" aria-label="Statut du voyage">
+            ${TRIP_STATUS.filter(s => s.key !== 'archive').map(s => `
+              <button type="button" class="status-chip ${s.key === t.status ? 'on' : ''}" style="--c:${s.color}"
+                      data-trip-status="${escAttr(s.key)}"
+                      aria-pressed="${s.key === t.status ? 'true' : 'false'}">${escHtml(s.label)}</button>`).join('')}
+          </div>
+          <p class="hint mt-xs">Catégorie au catalogue : <strong>${escHtml(statutMeta(d.statut).label)}</strong>
+            — mise à jour automatiquement.</p>
+          <div class="trip-prog-row mt-sm">${progressBar(pct, 'Avancement de la préparation')}</div>
+        </section>
+
+        <h3 class="section-title">🧩 Avancement par élément</h3>
+        ${elementRow('Transport', '✈️', 'transport', t.transport.status, 'data-transport', t.transport.label, 'transport')}
+        ${lodgingSectionHTML(t)}
+
+        <div class="el-label section-head">
+          🎯 Activités
+          <button type="button" class="btn btn-outline btn-sm push-right" data-add-act>➕ Ajouter</button>
         </div>
-        <button class="btn btn-outline btn-sm" id="trip-dates-save">💾 Enregistrer les dates</button>
-      </div>
+        <div class="act-list">
+          ${(t.activites || []).map((a, i) => {
+            const am = elStatusMeta('activite', a.status);
+            return `<div class="act-item">
+              <button type="button" class="act-name el-value" data-edit="act:${i}" data-val="${escAttr(a.nom)}"
+                      title="Cliquer pour renommer">${escHtml(a.nom)}</button>
+              <button type="button" class="status-chip on" style="--c:${am.color}" data-act="${i}"
+                      aria-label="Statut : ${escAttr(am.label)}. Cliquer pour passer au suivant">${escHtml(am.label)}</button>
+              <button type="button" class="act-del" data-del-act="${i}"
+                      aria-label="Supprimer ${escAttr(a.nom)}">✕</button>
+            </div>`;
+          }).join('') || '<p class="hint">Aucune activité. Clique sur « Ajouter ».</p>'}
+        </div>
 
-      <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">📝 Notes &amp; bons plans</h3>
-      <textarea id="trip-notes" class="add-item-input" style="width:100%;min-height:82px;resize:vertical;font-size:.84rem;line-height:1.5"
-        placeholder="Réservations, bons plans, idées, contacts… (enregistré avec le bouton ci-dessous)">${_esc(t.notes || '')}</textarea>
+        <h3 class="section-title">📅 Dates &amp; voyageurs</h3>
+        <div class="adv-filter-row gap-sm">
+          <div class="adv-field">
+            <label for="trip-date-dep">Départ</label>
+            <input type="date" class="add-item-input" id="trip-date-dep" value="${escAttr(t.date_depart || '')}">
+          </div>
+          <div class="adv-field">
+            <label for="trip-date-ret">Retour</label>
+            <input type="date" class="add-item-input" id="trip-date-ret" value="${escAttr(t.date_retour || '')}">
+          </div>
+          <div class="adv-field">
+            <label for="trip-travelers">Voyageurs</label>
+            <input type="number" min="1" max="12" class="add-item-input" id="trip-travelers"
+                   value="${escAttr(t.travelers || pref('travelers'))}">
+          </div>
+        </div>
 
-      <h3 style="font-size:.85rem;font-weight:600;margin:18px 0 10px">🧰 Outils du voyage</h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" data-go="agenda">📆 Agenda</button>
-        <button class="btn btn-outline btn-sm" data-go="programmes">🧠 Programme</button>
-        <button class="btn btn-outline btn-sm" data-go="transport">🚆 Transport</button>
-        <button class="btn btn-outline btn-sm" data-go="valises">🧳 Valise</button>
-        <button class="btn btn-outline btn-sm" data-go="recherche">🔍 Réserver</button>
-        <button class="btn btn-outline btn-sm" data-go="carte">📍 Carte</button>
-      </div>
+        <h3 class="section-title">📝 Notes &amp; bons plans</h3>
+        <label class="visually-hidden" for="trip-notes">Notes du voyage</label>
+        <textarea id="trip-notes" class="add-item-input trip-notes"
+          placeholder="Réservations, bons plans, idées, contacts…">${escHtml(t.notes || '')}</textarea>
 
-      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" data-dossier>📄 Imprimer / Générer le dossier de voyage</button>
-        <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${routardUrl((window.DESTINATIONS||[]).find(d=>d.id===t.destinationId)||{nom:t.nom})}">🧭 Guide du Routard</a>
-        <button class="btn btn-sm" style="background:#3b1111;color:#f87171;border:1px solid #7f1d1d;margin-left:auto" data-delete-trip>🗑️ Supprimer ce voyage</button>
-      </div>
+        <h3 class="section-title">🧰 Outils du voyage</h3>
+        <div class="btn-row">
+          <button type="button" class="btn btn-outline btn-sm" data-go="agenda">📆 Agenda</button>
+          <button type="button" class="btn btn-outline btn-sm" data-go="programmes">🧠 Programme</button>
+          <button type="button" class="btn btn-outline btn-sm" data-go="transport">🚆 Transport</button>
+          <button type="button" class="btn btn-outline btn-sm" data-go="valises">🧳 Valise</button>
+          <button type="button" class="btn btn-outline btn-sm" data-go="recherche">🔍 Réserver</button>
+          <button type="button" class="btn btn-outline btn-sm" data-go="carte">📍 Carte</button>
+        </div>
 
-      <div class="trip-modal-footer">
-        <button class="btn btn-success" id="trip-save-quit">💾 Enregistrer et quitter</button>
-        <button class="btn btn-outline" data-close>Fermer</button>
+        <div class="btn-row mt-md">
+          <button type="button" class="btn btn-primary btn-sm" data-dossier>📄 Dossier de voyage imprimable</button>
+          <a class="btn btn-outline btn-sm" target="_blank" rel="noopener noreferrer"
+             href="${safeUrl(routardUrl(d.nom ? d : { nom: t.nom }))}">🧭 Guide du Routard</a>
+          <button type="button" class="btn btn-danger btn-sm push-right" data-delete-trip>🗑️ Supprimer ce voyage</button>
+        </div>
+
+        <div class="trip-modal-footer">
+          <button type="button" class="btn btn-success" id="trip-save-quit">💾 Enregistrer et fermer</button>
+          <button type="button" class="btn btn-outline" data-close>Fermer</button>
+        </div>
       </div>
     </div>`;
 
-  // Handlers (délégation)
-  m.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => ov.classList.add('hidden')));
-  m.querySelector('[data-dossier]').addEventListener('click', () => openDossier(getTrip(id)));
+  const m = ov.querySelector('#trip-modal');
 
-  // Enregistrer et quitter (dates + notes)
-  m.querySelector('#trip-save-quit').addEventListener('click', () => {
-    const dep = document.getElementById('trip-date-dep').value;
-    const ret = document.getElementById('trip-date-ret').value;
-    const notes = document.getElementById('trip-notes').value;
-    updateTrip(id, { date_depart: dep || null, date_retour: ret || null, notes });
-    ov.classList.add('hidden');
-    window.showToast && window.showToast('💾 Voyage enregistré !');
+  $$('[data-close]', m).forEach(b => b.addEventListener('click', () => { saveFields(); closeOverlay(ov); }));
+  m.querySelector('[data-dossier]').addEventListener('click', () => { saveFields(); openDossier(getTrip(id)); });
+
+  const saveFields = () => updateTrip(id, {
+    date_depart: $('#trip-date-dep').value || '',
+    date_retour: $('#trip-date-ret').value || '',
+    travelers: Math.max(1, parseInt($('#trip-travelers').value, 10) || 1),
+    notes: $('#trip-notes').value,
   });
 
-  // Ajouter une activité
-  m.querySelector('[data-add-act]').addEventListener('click', () => {
-    const nom = prompt('Nom de l\'activité à ajouter :');
-    if (!nom || !nom.trim()) return;
-    updateTrip(id, t2 => ({ activites: [...(t2.activites || []), { nom: nom.trim(), type: 'culture', status: 'prevue' }] }));
-    openTripModal(id);
-  });
-  // Supprimer une activité
-  m.querySelectorAll('[data-del-act]').forEach(b => b.addEventListener('click', () => {
-    const i = +b.dataset.delAct;
-    updateTrip(id, t2 => ({ activites: (t2.activites || []).filter((_, idx) => idx !== i) }));
-    openTripModal(id);
-  }));
-  // Édition inline au double-clic (transport / hébergement / activité)
-  m.addEventListener('dblclick', e => {
-    const el = e.target.closest('[data-edit]');
-    if (el) startInlineEdit(el, id);
-  });
-  m.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
-    ov.classList.add('hidden');
-    vmGoTo(b.dataset.go, t.destinationId);
-  }));
-
-  // Sélecteur d'état unifié (catégorie destination + statut voyage synchronisés)
-  const catSel = m.querySelector('#trip-cat-select');
-  if (catSel) {
-    const dstatut = ((window.DESTINATIONS || []).find(d => d.id === t.destinationId) || {}).statut || 'projet';
-    catSel.value = dstatut;
-    catSel.addEventListener('change', () => {
-      const v = catSel.value;
-      if (window.setDestStatut) window.setDestStatut(t.destinationId, v);
-      if (v === 'aucun') { ov.classList.add('hidden'); return; } // archivé → on ferme
-      openTripModal(id);
+  /**
+   * Les dates, le nombre de voyageurs et les notes sont persistés dès la
+   * saisie : fermer la fiche ne doit jamais faire perdre une modification.
+   * Les dates étant la source de vérité de l'agenda, des valises et de
+   * tous les liens de réservation, on rafraîchit ce qui en dépend.
+   */
+  const bindAutoSave = () => {
+    ['#trip-date-dep', '#trip-date-ret', '#trip-travelers'].forEach(sel => {
+      const el = m.querySelector(sel);
+      if (el) {el.addEventListener('change', () => {
+        saveFields();
+        // Le bandeau de dates de l'en-tête et les liens de réservation suivent
+        const t3 = getTrip(id);
+        const sub = m.querySelector('.modal-sub');
+        if (sub) {
+          sub.textContent = `${t3.pays || ''}${t3.date_depart
+            ? ' · ' + t3.date_depart + ' → ' + (t3.date_retour || '?') : ' · Dates à définir'}`;
+        }
+        const tools = m.querySelector('.lodging-tools');
+        if (tools) {
+          tools.innerHTML = lodgingLinks({ trip: t3 }).map(x =>
+            `<a class="mini-btn" target="_blank" rel="noopener noreferrer" href="${safeUrl(x.url)}">${escHtml(x.emoji)} ${escHtml(x.label)}</a>`).join('');
+        }
+        showToast('📅 Dates enregistrées');
+      });}
     });
-  }
-  m.querySelectorAll('[data-transport]').forEach(b => b.addEventListener('click', () => {
-    updateTrip(id, t2 => ({ transport: { ...t2.transport, status: b.dataset.transport } }));
-    openTripModal(id);
-  }));
-  m.querySelectorAll('[data-hebergement]').forEach(b => b.addEventListener('click', () => {
-    updateTrip(id, t2 => ({ hebergement: { ...t2.hebergement, status: b.dataset.hebergement } }));
-    openTripModal(id);
-  }));
-  // Enregistrer le logement choisi par l'utilisateur
-  const lgSave = m.querySelector('#lodging-save');
-  if (lgSave) lgSave.addEventListener('click', () => {
-    const gv = x => { const el = document.getElementById(x); return el ? el.value.trim() : ''; };
-    updateTrip(id, t2 => ({ hebergement: Object.assign({}, t2.hebergement, {
-      nom: gv('lg-nom'), lien: gv('lg-lien'), adresse: gv('lg-adresse'), prix: gv('lg-prix'),
-      checkinDate: gv('lg-ci-date'), checkoutDate: gv('lg-co-date'),
-      checkinTime: gv('lg-ci-time'), checkoutTime: gv('lg-co-time'),
-      tel: gv('lg-tel'), email: gv('lg-email'), notes: gv('lg-notes'),
-    }) }));
-    window.showToast && window.showToast('🏨 Logement enregistré');
-    window.logHistory && window.logHistory('logement enregistré', gv('lg-nom') || t.nom);
+    const notes = m.querySelector('#trip-notes');
+    if (notes) notes.addEventListener('blur', saveFields);
+  };
+  bindAutoSave();
+
+  m.querySelector('#trip-save-quit').addEventListener('click', () => {
+    saveFields();
+    closeOverlay(ov);
+    showToast('💾 Voyage enregistré');
+  });
+
+  m.querySelector('[data-add-act]').addEventListener('click', async () => {
+    const nom = await vmPrompt({ title: 'Ajouter une activité', label: 'Nom de l\'activité' });
+    if (!nom) return;
+    updateTrip(id, t2 => ({ activites: [...(t2.activites || []), { nom, type: 'culture', status: 'prevue' }] }));
     openTripModal(id);
   });
-  m.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
-    const i = +b.dataset.act;
+
+  delegate(m, 'click', '[data-del-act]', (e, el) => {
+    const i = +el.dataset.delAct;
+    const act = (getTrip(id).activites || [])[i];
+    updateTrip(id, t2 => ({ activites: (t2.activites || []).filter((_, idx) => idx !== i) }));
+    if (act) {pushUndo(`Activité « ${act.nom} » supprimée`, () => {
+      updateTrip(id, t2 => { const a = (t2.activites || []).slice(); a.splice(i, 0, act); return { activites: a }; });
+      openTripModal(id);
+    });}
+    openTripModal(id);
+  });
+
+  delegate(m, 'click', '[data-edit]', (e, el) => startInlineEdit(el, id));
+  delegate(m, 'click', '[data-go]', (e, el) => { saveFields(); closeOverlay(ov); vmGoTo(el.dataset.go, id); });
+
+  delegate(m, 'click', '[data-trip-status]', (e, el) => {
+    updateTrip(id, { status: el.dataset.tripStatus });
+    openTripModal(id);
+    ['buildPinned', 'buildDashboard', 'renderDestGrid'].forEach(f => window[f] && window[f]());
+  });
+  delegate(m, 'click', '[data-transport]', (e, el) => {
+    updateTrip(id, t2 => ({ transport: { ...t2.transport, status: el.dataset.transport } }));
+    openTripModal(id);
+  });
+  delegate(m, 'click', '[data-hebergement]', (e, el) => {
+    updateTrip(id, t2 => ({ hebergement: { ...t2.hebergement, status: el.dataset.hebergement } }));
+    openTripModal(id);
+  });
+  delegate(m, 'click', '[data-act]', (e, el) => {
+    const i = +el.dataset.act;
     updateTrip(id, t2 => {
       const acts = t2.activites.slice();
       acts[i] = { ...acts[i], status: nextElStatus('activite', acts[i].status) };
       return { activites: acts };
     });
     openTripModal(id);
-  }));
+  });
 
-  // Sauvegarde des dates
-  m.querySelector('#trip-dates-save').addEventListener('click', () => {
-    const dep = document.getElementById('trip-date-dep').value;
-    const ret = document.getElementById('trip-date-ret').value;
-    updateTrip(id, { date_depart: dep || null, date_retour: ret || null });
-    window.showToast && window.showToast('📅 Dates enregistrées !');
+  m.querySelector('#lodging-save').addEventListener('click', () => {
+    const gv = x => { const el = document.getElementById(x); return el ? el.value.trim() : ''; };
+    updateTrip(id, t2 => ({
+      hebergement: Object.assign({}, t2.hebergement, {
+        nom: gv('lg-nom'), lien: gv('lg-lien'), adresse: gv('lg-adresse'), prix: gv('lg-prix'),
+        checkinDate: gv('lg-ci-date'), checkoutDate: gv('lg-co-date'),
+        checkinTime: gv('lg-ci-time'), checkoutTime: gv('lg-co-time'),
+        tel: gv('lg-tel'), email: gv('lg-email'), notes: gv('lg-notes'),
+      }),
+    }));
+    showToast('🏨 Logement enregistré');
+    logHistory('logement enregistré', $('#lg-nom').value.trim() || t.nom);
     openTripModal(id);
   });
 
-  // Suppression du voyage
-  m.querySelector('[data-delete-trip]').addEventListener('click', () => {
-    if (!confirm(`Supprimer le voyage "${t.nom}" ? Cette action est irréversible.`)) return;
-    removeTrip(id);
-    ov.classList.add('hidden');
-    window.showToast && window.showToast('🗑️ Voyage supprimé.');
+  m.querySelector('[data-delete-trip]').addEventListener('click', async () => {
+    closeOverlay(ov);
+    await window.deleteTrip(id);
   });
 
-  ov.classList.remove('hidden');
-  setTimeout(() => { const f = m.querySelector('#trip-cat-select, .modal-close'); if (f) f.focus(); }, 60);
+  openOverlay(ov);
 }
 
-// ── Navigation inter-pages (pré-sélectionne la destination) ──
-function vmGoTo(page, destId) {
-  window.showPage(page);
-  setTimeout(() => {
-    if (page === 'transport' && window.transportSelect) window.transportSelect(destId);
-    else if (page === 'programmes' && window.programsSelect) window.programsSelect(destId);
-    else if (page === 'agenda') { const s = document.getElementById('ag-dest-select'); if (s) { s.value = destId; window.agOnDestChange && window.agOnDestChange(); } }
-    else if (page === 'valises') { const s = document.getElementById('valise-dest-select'); if (s) { s.value = destId; window.loadValise && window.loadValise(); } }
-    else if (page === 'recherche') { const s = document.getElementById('search-dest-select'); if (s) { s.value = destId; window.updateSearchLinks && window.updateSearchLinks(); } }
-    else if (page === 'carte') { window.focusMap && window.focusMap(destId); }
-  }, 80);
-}
-
-/** Crée (ou retrouve) un voyage à partir d'une destination du catalogue. */
 function vmCreateTrip(destId) {
-  const dest = (window.DESTINATIONS || []).find(d => d.id === destId);
-  if (!dest) return;
-  let trip = getTripByDestination(destId);
-  if (!trip) { trip = addTrip(tripFromDestination(dest)); window.showToast && window.showToast('🧳 Voyage créé !'); }
-  if (window.closeModal) window.closeModal();
-  openTripModal(trip.id);
+  const t = getTripByDestination(destId);
+  if (t) { openTripModal(t.id); return; }
+  window.createVoyageFromDest && createVoyageFromDest(destId);
 }
 
-// Exposé pour usage depuis le code legacy (onclick inline) et les autres vues
-window.openTripModal = openTripModal;
-window.vmGoTo = vmGoTo;
-window.vmCreateTrip = vmCreateTrip;
-
-// ── Bootstrap ───────────────────────────────────────────
-function init() {
-  loadStore();
-  renderMount();
-  subscribe(renderMount);
-  const mount = document.getElementById('trips-mount');
-  if (mount) {
-    mount.addEventListener('click', e => {
-      const del = e.target.closest('[data-del-trip-card]');
-      if (del) {
-        e.stopPropagation();
-        const id = del.dataset.delTripCard;
-        const t = getTrip(id);
-        if (t && confirm(`Supprimer le voyage « ${t.nom} » ?`)) {
-          removeTrip(id);
-          window.showToast && window.showToast('🗑️ Voyage supprimé.');
-        }
-        return;
-      }
-      const card = e.target.closest('[data-trip]');
-      if (card) openTripModal(card.dataset.trip);
-    });
-  }
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+Object.assign(window, { openTripModal, vmCreateTrip });
 })();

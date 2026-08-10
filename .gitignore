@@ -1,2 +1,6 @@
 .claude/
 CLOUDFLARE_ACCESS.md
+
+node_modules/
+.DS_Store
+*.log

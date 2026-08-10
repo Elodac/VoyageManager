@@ -15,7 +15,7 @@
   /* ── Texte ── */
   --text: #172033;
   --muted: #55647d;
-  --text-dim: #8593a8;
+  --text-dim: #5f6d85;   /* 5.23 sur blanc · 4.80 sur --bg3 (placeholders) */
 
   /* ── Marque / sémantique ── */
   --accent: #2563eb;
@@ -31,6 +31,16 @@
   --red: #dc2626;
   --red-weak: rgba(220,38,38,.10);
   --purple: #7c3aed;
+
+  /* ── Variantes TEXTE (contraste AA ≥ 4.5:1 sur --bg / --bg2 / --bg3) ──
+     Les tokens ci-dessus restent réservés aux SURFACES (fonds, bordures,
+     barres). Dès qu'une couleur porte du texte < 24px, utiliser ces variantes. */
+  --green-text:  #0f7038;   /* 6.19 sur blanc · 5.59 sur --bg */
+  --yellow-text: #96530a;   /* 5.98 sur blanc · 5.40 sur --bg */
+  --red-text:    #c01c1c;   /* 6.13 sur blanc · 5.54 sur --bg */
+  --accent-text: #2563eb;   /* 5.17 sur blanc · 4.67 sur --bg */
+  --accent2-text:#036e88;   /* 5.85 sur blanc · 5.29 sur --bg */
+  --purple-text: #7c3aed;   /* 5.70 sur blanc · 5.15 sur --bg */
 
   /* ── Ombres (douces sur fond clair) ── */
   --shadow-sm: 0 1px 2px rgba(23,32,54,.06);
@@ -93,7 +103,7 @@
 
   --text: #eaf0fb;
   --muted: #9fabc6;
-  --text-dim: #6d7b99;
+  --text-dim: #8492b0;   /* 4.75 sur --bg3 (placeholders) */
 
   --accent: #4f6ef5;
   --accent-hover: #6d8bff;
@@ -108,6 +118,15 @@
   --red: #f2555a;
   --red-weak: rgba(242,85,90,.15);
   --purple: #a78bfa;
+
+  /* ── Variantes TEXTE (contraste AA sur --bg2 / --bg3) ──
+     En sombre, seuls l'accent et le rouge avaient besoin d'être éclaircis. */
+  --green-text:  #2ecc71;   /* 7.05 sur --bg3 */
+  --yellow-text: #f5a623;   /* 7.31 sur --bg3 */
+  --red-text:    #f4787c;   /* 5.53 sur --bg3 */
+  --accent-text: #8ba4ff;   /* 6.25 sur --bg3 */
+  --accent2-text:#22d3ee;   /* 8.20 sur --bg3 */
+  --purple-text: #a78bfa;   /* 5.45 sur --bg3 */
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,.28);
   --shadow: 0 4px 16px rgba(0,0,0,.32);

@@ -1,45 +1,51 @@
 // ============================================================
 // model.js — modèle de données Voyage + statuts + progression
-// (Phase 1B — refonte modulaire)
+//
+// Répartition des responsabilités :
+//   • Destination = référentiel (catalogue, POIs, infos pays) — sans état
+//   • Voyage      = tout l'état (dates, budget, statut, avancement)
+// `statut` côté destination n'est plus qu'une projection du voyage,
+// conservée pour les filtres du catalogue (cf. TRIP_TO_CATALOG_STATUS).
 // ============================================================
 
 /** Statut global d'un voyage, ordonné de l'idée à l'archivage. */
 const TRIP_STATUS = [
-  { key: 'idee',          label: '💡 Idée',                color: '#8892a4' },
-  { key: 'preparation',   label: '🗂️ En préparation',      color: '#f59e0b' },
-  { key: 'reservations',  label: '🔄 Réservations en cours',color: '#f59e0b' },
-  { key: 'billets',       label: '🎫 Billets réservés',     color: '#3b82f6' },
-  { key: 'hebergement',   label: '🏨 Hébergement réservé',  color: '#3b82f6' },
-  { key: 'pret',          label: '✅ Voyage prêt',          color: '#22c55e' },
-  { key: 'termine',       label: '🏁 Voyage terminé',       color: '#6366f1' },
-  { key: 'archive',       label: '📦 Archivé',              color: '#64748b' },
+  { key: 'idee',         label: '💡 Idée',                 short: 'Idée',         color: 'var(--muted)' },
+  { key: 'preparation',  label: '🗂️ En préparation',       short: 'Préparation',  color: 'var(--yellow-text)' },
+  { key: 'reservations', label: '🔄 Réservations en cours', short: 'Réservations', color: 'var(--yellow-text)' },
+  { key: 'billets',      label: '🎫 Billets réservés',      short: 'Billets',      color: 'var(--accent-text)' },
+  { key: 'hebergement',  label: '🏨 Hébergement réservé',   short: 'Hébergement',  color: 'var(--accent-text)' },
+  { key: 'pret',         label: '✅ Voyage prêt',           short: 'Prêt',         color: 'var(--green-text)' },
+  { key: 'termine',      label: '🏁 Voyage terminé',        short: 'Terminé',      color: 'var(--purple-text)' },
+  { key: 'archive',      label: '📦 Archivé',               short: 'Archivé',      color: 'var(--muted)' },
 ];
 
 /** Statuts par type d'élément (transport / hébergement / activité). */
 const ELEMENT_STATUS = {
   transport: [
-    { key: 'non_reserve', label: 'Non réservé', color: '#8892a4' },
-    { key: 'reserve',     label: 'Réservé',     color: '#f59e0b' },
-    { key: 'paye',        label: 'Payé',        color: '#3b82f6' },
-    { key: 'confirme',    label: 'Confirmé',    color: '#22c55e' },
+    { key: 'non_reserve', label: 'Non réservé', color: 'var(--muted)' },
+    { key: 'reserve',     label: 'Réservé',     color: 'var(--yellow-text)' },
+    { key: 'paye',        label: 'Payé',        color: 'var(--accent-text)' },
+    { key: 'confirme',    label: 'Confirmé',    color: 'var(--green-text)' },
   ],
   hebergement: [
-    { key: 'recherche',   label: 'Recherche',   color: '#8892a4' },
-    { key: 'reserve',     label: 'Réservé',     color: '#f59e0b' },
-    { key: 'paye',        label: 'Payé',        color: '#3b82f6' },
-    { key: 'confirme',    label: 'Confirmé',    color: '#22c55e' },
+    { key: 'recherche',   label: 'Recherche',   color: 'var(--muted)' },
+    { key: 'reserve',     label: 'Réservé',     color: 'var(--yellow-text)' },
+    { key: 'paye',        label: 'Payé',        color: 'var(--accent-text)' },
+    { key: 'confirme',    label: 'Confirmé',    color: 'var(--green-text)' },
   ],
   activite: [
-    { key: 'prevue',      label: 'Prévue',      color: '#8892a4' },
-    { key: 'reservee',    label: 'Réservée',    color: '#f59e0b' },
-    { key: 'effectuee',   label: 'Effectuée',   color: '#22c55e' },
+    { key: 'prevue',      label: 'Prévue',      color: 'var(--muted)' },
+    { key: 'reservee',    label: 'Réservée',    color: 'var(--yellow-text)' },
+    { key: 'effectuee',   label: 'Effectuée',   color: 'var(--green-text)' },
   ],
 };
 
-const tripStatusMeta = (key) => TRIP_STATUS.find(s => s.key === key) || TRIP_STATUS[0];
-const elStatusMeta = (type, key) => (ELEMENT_STATUS[type] || []).find(s => s.key === key) || ELEMENT_STATUS[type][0];
+const tripStatusMeta = key => TRIP_STATUS.find(s => s.key === key) || TRIP_STATUS[0];
+const elStatusMeta = (type, key) =>
+  (ELEMENT_STATUS[type] || []).find(s => s.key === key) || (ELEMENT_STATUS[type] || [{}])[0];
 
-/** Renvoie la clé du statut suivant dans le cycle (pour les chips cliquables). */
+/** Statut suivant dans le cycle (chips cliquables). */
 function nextElStatus(type, key) {
   const arr = ELEMENT_STATUS[type];
   const i = arr.findIndex(s => s.key === key);
@@ -61,9 +67,10 @@ function elNorm(type, key) {
  * moitié = position du statut global, moitié = moyenne des statuts d'éléments.
  */
 function computeTripProgress(trip) {
+  if (!trip) return 0;
   if (trip.status === 'termine' || trip.status === 'archive') return 100;
   const els = [];
-  if (trip.transport)  els.push(elNorm('transport', trip.transport.status));
+  if (trip.transport) els.push(elNorm('transport', trip.transport.status));
   if (trip.hebergement) els.push(elNorm('hebergement', trip.hebergement.status));
   (trip.activites || []).forEach(a => els.push(elNorm('activite', a.status)));
   const elAvg = els.length ? els.reduce((a, b) => a + b, 0) / els.length : 0;
@@ -72,7 +79,7 @@ function computeTripProgress(trip) {
   return Math.round((0.5 * gNorm + 0.5 * elAvg) * 100);
 }
 
-/** Mappe le statut "catalogue" historique → statut de voyage. */
+/** Catégorie catalogue → statut de voyage (création). */
 const CATALOG_TO_TRIP_STATUS = {
   confirme: 'pret',
   planification: 'preparation',
@@ -80,21 +87,31 @@ const CATALOG_TO_TRIP_STATUS = {
   projet_longterme: 'idee',
 };
 
+/** Statut de voyage → catégorie catalogue (projection inverse). */
+const TRIP_TO_CATALOG_STATUS = {
+  idee: 'projet',
+  preparation: 'planification',
+  reservations: 'planification',
+  billets: 'planification',
+  hebergement: 'planification',
+  pret: 'confirme',
+  termine: 'confirme',
+  archive: 'projet',
+};
+
 let _seq = 0;
 const newId = () => 't' + Date.now().toString(36) + (_seq++).toString(36);
 
 /**
  * Crée un Voyage à partir d'une fiche destination du catalogue.
- * Les statuts d'éléments sont pré-positionnés intelligemment :
- * un voyage confirmé démarre transport + hébergement "confirmés".
+ * Aucune réservation n'est présupposée : tout part de zéro et
+ * c'est l'utilisateur qui renseigne transport et hébergement.
  */
 function tripFromDestination(dest, overrides = {}) {
-  const confirmed = dest.statut === 'confirme';
   const activites = (dest.pois || []).slice(0, 6).map(p => ({
-    nom: p.nom,
-    type: p.type,
-    status: confirmed ? 'reservee' : 'prevue',
+    nom: p.nom, type: p.type, status: 'prevue',
   }));
+  const travelers = (window.pref && pref('travelers')) || 2;
   return {
     id: newId(),
     destinationId: dest.id,
@@ -103,11 +120,15 @@ function tripFromDestination(dest, overrides = {}) {
     pays: dest.pays,
     date_depart: dest.date_depart || '',
     date_retour: dest.date_retour || '',
+    travelers,
     participants: [],
     status: CATALOG_TO_TRIP_STATUS[dest.statut] || 'idee',
-    transport:   { mode: dest.compagnie || '', label: dest.vol || '', status: confirmed ? 'confirme' : 'non_reserve' },
-    // Logement 100% choisi par l'utilisateur (aucun hébergement imposé)
-    hebergement: { nom: '', adresse: '', lien: '', prix: '', checkinDate: '', checkoutDate: '', checkinTime: '', checkoutTime: '', tel: '', email: '', notes: '', status: 'recherche' },
+    transport: { mode: '', label: '', status: 'non_reserve' },
+    hebergement: {
+      nom: '', adresse: '', lien: '', prix: '',
+      checkinDate: '', checkoutDate: '', checkinTime: '', checkoutTime: '',
+      tel: '', email: '', notes: '', status: 'recherche',
+    },
     activites,
     budget: { min: dest.budget_min || 0, max: dest.budget_max || 0 },
     notes: '',
@@ -116,3 +137,15 @@ function tripFromDestination(dest, overrides = {}) {
     ...overrides,
   };
 }
+
+/** Libellé court d'un voyage pour les sélecteurs. */
+function tripLabel(t) {
+  const dates = t.date_depart ? ' · ' + t.date_depart.slice(0, 7) : '';
+  return `${t.emoji || '✈️'} ${t.nom}${dates}`;
+}
+
+Object.assign(window, {
+  TRIP_STATUS, ELEMENT_STATUS, tripStatusMeta, elStatusMeta, nextElStatus, nextTripStatus,
+  computeTripProgress, CATALOG_TO_TRIP_STATUS, TRIP_TO_CATALOG_STATUS,
+  newId, tripFromDestination, tripLabel,
+});

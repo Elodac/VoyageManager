@@ -79,3 +79,5 @@ function generateProgram(dest, days, theme) {
   }
   return { hstart: 8, hend: 23, days, theme, blocks };
 }
+
+Object.assign(window, { THEMES, DURATIONS, THEME_TYPES, generateProgram });
